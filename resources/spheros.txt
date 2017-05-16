@@ -1,6 +1,0 @@
-Sphero-BGY-AMP-SPP:
-Address: 68-86-E7-07-07-6B
-Sphero-GYB-AMP-SPP:
-Address: 68-86-E7-06-FD-1D
-Sphero-OOP-AMP-SPP:
-Address: 68-86-E7-08-0E-DF
