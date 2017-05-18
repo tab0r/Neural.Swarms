@@ -8,15 +8,7 @@ from figure import Figure, FigureStrategy
 from logger import log
 
 # utilities
-import pandas as pd
 import numpy as np
-import pdb
-import random
-import pylab as pl
-import pickle
-import os.path
-from collections import Counter
-from tqdm import *
 
 # Navigator game main class
 class NaviGame(BoardGame):

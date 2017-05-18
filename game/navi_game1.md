@@ -21,4 +21,4 @@
     - Five output neurons (one for each action/value)
     - Convergence occured with 1000 game steps and 20 epochs
     - using SGD and a learning rate 0.005.
-    - file: `navi_game.py`
+    - file: `navi_game1.py`
