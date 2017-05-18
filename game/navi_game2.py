@@ -68,7 +68,6 @@ class NaviGame(BoardGame):
             self.model = self.baseline_model()
         else:
             self.model = model
-        self._game_active = False
 
     def setup(self):
         self.Flag = Figure(self.board)
@@ -81,8 +80,8 @@ class NaviGame(BoardGame):
         self.Navigator.color = 1
 
     # in: 4, out: 5
-    def baseline_model(optimizer = sgd(lr=0.001),
-                        layers=[{"size":20,"activation":"relu"}]):
+    def baseline_model(optimizer = sgd(lr = 0.001),
+                        layers = [{"size":20,"activation":"relu"}]):
         # one action for each direction and one for hold
         num_actions = 5
         # prepare the navigator model
@@ -92,8 +91,8 @@ class NaviGame(BoardGame):
         l0 = l[0]
         del l[0]
         model.add(Dense(l0['size'],
-                        input_dim=4,
-                        activation=l0['activation']))
+                        input_dim = 4,
+                        activation = l0['activation']))
         # the hidden layers
         for layer in l:
             model.add(Dense(layer['size'], activation=layer['activation']))
@@ -104,7 +103,7 @@ class NaviGame(BoardGame):
         return model
 
     # generate data for training the navigator
-    def train_data(self, n = 100, num_games = 1):
+    def train_data(self, n = 100, num_games = 1, mode="random"):
         # set game to training mode
         self.Navigator.strategy.toggle_train()
         # generate training data from a potential domain of games
@@ -113,11 +112,11 @@ class NaviGame(BoardGame):
         for i in range(num_games):
             # generate random goal and set it
             # change every n / num_games moves
-            goal = (randint(0, self.board.height), randint(0, self.board.width))
+            goal = (randint(0, self.board.height-1), randint(0, self.board.width-1))
             while (self.Navigator.position == goal):
                 # ensure it's not our position
                 # or original goal..?
-                goal = (randint(0, self.board.height), randint(0, self.board.width))
+                goal = (randint(0, self.board.height-1), randint(0, self.board.width-1))
             self.Navigator.strategy.goal = goal
             for j in range(int(n/num_games)):
                 # stepping the game adds new data point
@@ -177,7 +176,7 @@ class NaviStrategy(FigureStrategy):
         self.actions = [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]
         # test or train flag
         self.train = False
-        self.rewards = {'closer': 1, 'farther':-1, 'goal': 10}
+        self.rewards = {'closer': 1, 'farther':0, 'goal': 10}
         self.training_inputs = []
         self.training_rewards = []
         self._last_distance = None
@@ -233,12 +232,12 @@ class NaviStrategy(FigureStrategy):
         for action in self.actions:
             new_pos = np.array(action) + np.array(position)
             new_dist = self.get_distance(new_pos)
-            reward = 0
+            reward = 0.1
             if new_dist < last_distance:
                 reward += self.rewards['closer']
             else:
                 reward += self.rewards['farther']
-            if new_dist == 1:
+            if new_dist == 1.0:
                 reward += self.rewards['goal']
             rewards.append(reward)
         return rewards
@@ -252,15 +251,18 @@ if __name__=='__main__':
     random.seed(2)
 
     # layers
-    layers = [{"size":8,"activation":"tanh"},
-                {"size":16,"activation":"linear"},
-                {"size":8,"activation":"linear"}]
+    layers = [{"size":64,"activation":"tanh"},
+                {"size":64,"activation":"tanh"},
+                {"size":32,"activation":"sigmoid"}]
+
+    # number of epochs for training
+    epochs = 20
 
     # learning rate
-    learning_rate = 0.01
+    learning_rate = 0.00001
     # optimizer
     optimizer = sgd(lr=learning_rate)
-    optimizer_str = "SGD(lr="+str(learning_rate)+")"
+    optimizer_str = "SGD(lr = "+str(learning_rate)+")"
     # make the model
     model = NaviGame.baseline_model(optimizer, layers)
 
@@ -270,16 +272,13 @@ if __name__=='__main__':
     final_inputs, final_targets = final_boss.train_data()
 
     # number of games to get data from
-    num_games = 100
+    num_games = 256
 
     # number of steps to take from each game
-    steps = 100
-
-    # number of epochs for training
-    epochs = 10
+    steps = 256
 
     # plot & pickle str
-    p_str = "games_100_x_100_on_8x8.p"
+    p_str = "../pickled_data/C1_F0_G10/games_256_x_256_steps_on_8x8.p"
 
     if os.path.isfile(p_str):
         # load the pickle

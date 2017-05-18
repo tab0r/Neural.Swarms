@@ -1,5 +1,13 @@
 # Pickles of training data
 pickled_data/
+# Pickles in general
+*.p
+# My resources - just generated graphs for the final presentation
+# Make em yourself!
+resources/
+*.png
+# Damn mac OS X index files that like to be everywhere
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,0 +1,24 @@
+## Experiment 1: Navigation with a vector
+- **Agent** Navigator with an MLP policy evaluator. Input is a vector to target, output is an estimate of value of one of five actions. Navigator chooses highest value.
+- **Quantitiy** 1 neural agent, 2 => hidden => 5
+- **Training Method** Reinforcement/Q learning on an MLP
+- **File**: `github.com/thetabor/Python.Swarms/navi_game.py`
+- May 14, 2017 Notes:
+    - Pieces in place, can train a model on one goal at a time.
+    - Seems to kinda work? Very slowly. Now trying to train it a lot and see if I can get it moving faster.
+    - Realized we can move up to an RNN by feeding the rewards back into it.
+    - Also really need to implement a "game over" method, stop training on non-interesting states.
+    - But is that relevant when it trains on a random path?
+    - Was working with an input of (pos, goal), so that one model can play multiple games.
+    - To contextualize the whole "game over" idea, the game is not over until the agent learns what it's supposed to do.
+    - SO. The game is training the model.
+    - And now only training a network with (pos) for input
+    - I think I've just had my first major success! I must consider how to use this...
+    - The network succesfully trains with goals at (7, 7) and (3, 3) on a 16 by 16 px board.
+- Final Details
+    - Three-layer ReLu MLP with two input neurons (for position)
+    - 20-neuron hidden layer
+    - Five output neurons (one for each action/value)
+    - Convergence occured with 1000 game steps and 20 epochs
+    - using SGD and a learning rate 0.005.
+    - file: `navi_game.py`

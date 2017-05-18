@@ -90,7 +90,7 @@ class FlagStrategy(FigureStrategy):
 
 # navigator to get to target
 class NaviStrategy(FigureStrategy):
-    def __init__(self, model, goal):
+    def __init__(self, model=None, goal):
         self.symbol = "."
         self.model = model
         self.goal = goal
