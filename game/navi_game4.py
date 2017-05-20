@@ -27,41 +27,16 @@ class NaviGame(BoardGame):
         self.Navigator.strategy.placeIt()
         self.Navigator.color = 1
 
-    # generate data for training the navigator
-    def game_data(self, n = 100, num_games = 1):
-        # set game to training mode
-        self.Navigator.strategy.toggle_train()
-        # generate training data from a potential domain of games
-        real_goal = self.Navigator.strategy.goal
-        steps = 0
-        for i in range(num_games):
-            # generate random goal and set it
-            # change every n / num_games moves
+    def shift_goal(self, goal = None):
+        if goal == None:
             goal = (randint(0, self.board.height-1), randint(0, self.board.width-1))
-            while (self.Navigator.position == goal):
-                # ensure it's not our position
-                # or original goal..?
-                goal = (randint(0, self.board.height-1), randint(0, self.board.width-1))
+        try:
+            self.goal = goal
+            self.Flag.move(y=goal[0], x=goal[1], relative=False)
             self.Navigator.strategy.goal = goal
-            for j in range(int(n/num_games)):
-                # stepping the game adds new data point
-                self.step()
-                steps += 1
-                if steps >= n: break
-        # restore the games' goal
-        self.Navigator.strategy.goal = real_goal
-        # save the run, toggle training more and return the data
-        inputs  = self.Navigator.strategy.training_inputs
-        targets = self.Navigator.strategy.training_rewards
-
-        self.Navigator.strategy.toggle_train()
-        return inputs, targets
-
-    def shift_goal(self, y, x):
-        self.goal = (y, x)
-        self.Flag.move(y=y, x=x, relative=False)
-        self.Navigator.strategy.goal = (y, x)
-
+        except:
+            self.shift_goal()
+            
 # flag for the target location
 class FlagStrategy(FigureStrategy):
     symbol = "~"
@@ -149,11 +124,6 @@ class NaviStrategy(FigureStrategy):
             ##self.figure.move(action[0], action[1], relative = True)
         except self.board.TakenException:
             action = self.actions[0]
-
-    def toggle_record(self):
-        self.train = not self.train
-        self.training_inputs = []
-        self.training_rewards = []
 
 if __name__=='__main__':
     np.random.seed(2)
