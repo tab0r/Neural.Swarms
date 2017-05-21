@@ -146,7 +146,7 @@ if __name__=='__main__':
                 {"size":5,"activation":"tanh"}]
 
     # number of epochs for training
-    epochs = 20
+    epochs = 100
     batch_size = 1
 
     # learning rate
@@ -197,5 +197,3 @@ if __name__=='__main__':
     # pull data points of for validation
     print("Network and final validation data ready for testing.")
         # prepare the game for final validation
-    final_boss = NaviGame(8, 8, goal = (3, 3), model = model)
-    final_boss.setup()
