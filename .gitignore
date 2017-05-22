@@ -8,6 +8,8 @@ resources/
 *.png
 # Damn mac OS X index files that like to be everywhere
 .DS_Store
+# ipynb checkpoints
+.ipynb_checkpoints/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

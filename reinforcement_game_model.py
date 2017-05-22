@@ -83,7 +83,7 @@ def train_data(game, figure, n = 100):
         choice = figure.strategy.plan_movement()
         t = [0, 0, 0, 0, 0]
         t[choice] = 1
-        targets.append(t)
+        targets.append(get_rewards(choice, position, goal))
         if (choice == 0) and (last_choice == 0):
             break
         else:
@@ -117,25 +117,25 @@ def train_model(navi_game, model, steps = 1000,
     else:
         return log
 
-# def get_rewards(self, position, last_distance):
-#     rewards = []
-#     #pdb.set_trace()
-#     for action in self.actions:
-#         new_pos = np.array(action) + np.array(position)
-#         new_dist = self.get_distance(new_pos)
-#         reward = 0.1
-#         if new_dist < last_distance:
-#             reward += self.rewards['closer']
-#         else:
-#             reward += self.rewards['farther']
-#         if new_dist == 1.0:
-#             reward += self.rewards['goal']
-#         rewards.append(reward)
-#     return rewards
-#
-# def get_distance(self, position):
-#     #return np.abs(position - np.array(self.goal)).sum()
-#     return np.linalg.norm(position - np.array(self.goal))
+def get_rewards(goal, figure, position, last_distance):
+    rewards = []
+    #pdb.set_trace()
+    for action in figure.actions:
+        new_pos = np.array(action) + np.array(position)
+        new_dist = get_distance(new_pos)
+        reward = 0.1
+        if new_dist < last_distance:
+            reward += figure.rewards['closer']
+        else:
+            reward += figure.rewards['farther']
+        if new_dist == 1.0:
+            reward += figure.rewards['goal']
+        rewards.append(reward)
+    return rewards
+
+def get_distance(position, goal):
+    #return np.abs(position - np.array(self.goal)).sum()
+    return np.linalg.norm(position - np.array(goal))
 
 if __name__=='__main__':
     game = NaviGame(8, 8)
