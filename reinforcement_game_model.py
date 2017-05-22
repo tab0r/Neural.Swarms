@@ -1,13 +1,3 @@
-# import the game
-from navi_game import *
-
-# imports for neural net
-from keras.utils import np_utils
-from keras.models import Sequential
-from keras.layers.core import Dense
-from keras.optimizers import sgd, RMSprop, Adagrad
-import theano
-
 # utilities
 import pandas as pd
 import numpy as np
@@ -16,6 +6,18 @@ import pickle
 import os.path
 from collections import Counter
 from tqdm import *
+
+# import the game
+import sys
+sys.path.append(path.abspath("../Python.Swarms/"))
+from navi_game import *
+
+# imports for neural net
+from keras.utils import np_utils
+from keras.models import Sequential
+from keras.layers.core import Dense
+from keras.optimizers import sgd, RMSprop, Adagrad
+import theano
 
 def model_benchmark(model, actions, goal):
     print('''Prediction Test: If network does not provide differentiated
