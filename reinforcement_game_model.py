@@ -3,13 +3,13 @@ import pandas as pd
 import numpy as np
 import pylab as pl
 import pickle
-import os.path
+import os
 from collections import Counter
 from tqdm import *
 
 # import the game
 import sys
-sys.path.append(path.abspath("../Python.Swarms/"))
+sys.path.append(os.path.abspath("../Python.Swarms/"))
 from navi_game import *
 
 # imports for neural net
