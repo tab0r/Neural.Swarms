@@ -1,5 +1,17 @@
+# utilities
+import pandas as pd
+import numpy as np
+import pylab as pl
+import pickle
+import os
+from collections import Counter
+# from tqdm import *
+
 # import the game
+import sys
+sys.path.append(os.path.abspath("../Python.Swarms/"))
 from navi_game import *
+from notebook_game_helper import *
 
 # imports for neural net
 from keras.utils import np_utils
@@ -7,15 +19,6 @@ from keras.models import Sequential
 from keras.layers.core import Dense
 from keras.optimizers import sgd, RMSprop, Adagrad
 import theano
-
-# utilities
-import pandas as pd
-import numpy as np
-import pylab as pl
-import pickle
-import os.path
-from collections import Counter
-from tqdm import *
 
 def model_benchmark(model, actions, goal):
     print('''Prediction Test: If network does not provide differentiated
@@ -117,26 +120,6 @@ def train_model(navi_game, model, steps = 1000,
     else:
         return log
 
-# def get_rewards(self, position, last_distance):
-#     rewards = []
-#     #pdb.set_trace()
-#     for action in self.actions:
-#         new_pos = np.array(action) + np.array(position)
-#         new_dist = self.get_distance(new_pos)
-#         reward = 0.1
-#         if new_dist < last_distance:
-#             reward += self.rewards['closer']
-#         else:
-#             reward += self.rewards['farther']
-#         if new_dist == 1.0:
-#             reward += self.rewards['goal']
-#         rewards.append(reward)
-#     return rewards
-#
-# def get_distance(self, position):
-#     #return np.abs(position - np.array(self.goal)).sum()
-#     return np.linalg.norm(position - np.array(self.goal))
-
 if __name__=='__main__':
     game = NaviGame(8, 8)
     game.setup()
@@ -146,7 +129,7 @@ if __name__=='__main__':
                 {"size":5,"activation":"tanh"}]
 
     # number of epochs for training
-    epochs = 100
+    epochs = 10
     batch_size = 1
 
     # learning rate
