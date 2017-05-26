@@ -5,13 +5,10 @@ import pylab as pl
 import pickle
 import os
 from collections import Counter
-# from tqdm import *
+from tqdm import *
 
 # import the game
-import sys
-sys.path.append(os.path.abspath("../Python.Swarms/"))
-from navi_game import *
-from notebook_game_helper import *
+from neural_navi_game import *
 
 # imports for neural net
 from keras.utils import np_utils
@@ -54,11 +51,11 @@ def model_benchmark(model, actions, goal):
     # print(''' Are they equal? If so this is extra bad... ''')
     # print(model.predict(np.array([1,7]).reshape(1,2)) == model.predict(np.array([14,7]).reshape(1,2)))
 
-# in: 4, out: 5
+# in: 4, out: 1
 def baseline_model(optimizer = sgd(lr = 0.001),
                     layers = [{"size":20,"activation":"relu"}]):
-    # one action for each direction and one for hold
-    num_actions = 5
+    # one output - returns the predicted reward for a state
+    num_outputs = 1
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -72,7 +69,7 @@ def baseline_model(optimizer = sgd(lr = 0.001),
     for layer in l:
         model.add(Dense(layer['size'], activation=layer['activation']))
     # the output layer
-    model.add(Dense(num_actions, activation='sigmoid'))
+    model.add(Dense(num_outputs, activation='sigmoid'))
     model.compile(optimizer = optimizer,
                     loss = "mean_squared_error")
     return model
@@ -80,17 +77,11 @@ def baseline_model(optimizer = sgd(lr = 0.001),
 # generate data for training the navigator
 def train_data(game, figure, n = 100):
     inputs, targets = [], []
-    last_choice = None
     for i in range(n):
         inputs.append(figure.strategy.get_input())
-        choice = figure.strategy.plan_movement()
-        t = [0, 0, 0, 0, 0]
-        t[choice] = 1
-        targets.append(t)
-        if (choice == 0) and (last_choice == 0):
-            break
-        else:
-            last_choice = choice
+        position = figure.position()
+        goal = figure.strategy.goal
+        targets.append(get_reward(position, goal))
         game.step()
     # return the data
     return inputs, targets
@@ -99,17 +90,8 @@ def train_model(navi_game, model, steps = 1000,
                 epochs = 20, batch_size = 32, verbose = 0,
                 all_data = False, inputs = None, targets = None):
     if (inputs == None) and (targets == None):
-        s = 0
-        inputs, targets = [], []
-        while s < steps:
-            navi_game.shift_goal()
-            inputsk, targetsk = train_data(navi_game, navi_game.Navigator, 10)
-            inputs.extend(inputsk)
-            targets.extend(targetsk)
-            s += len(inputsk)
+        inputs, targets = train_data(navi_game, navi_game.Navigator, n = steps)
         print("Data generated, now fitting network")
-    else:
-        games = None
     log = model.fit(inputs, targets,
         verbose = verbose,
         epochs = epochs,
@@ -120,20 +102,37 @@ def train_model(navi_game, model, steps = 1000,
     else:
         return log
 
-if __name__=='__main__':
-    game = NaviGame(8, 8)
-    game.setup()
+def get_reward(position, goal):
+    dist = get_distance(position, goal)
+    reward = -0.1
+    if (dist == 1.0):
+        reward += 10
+    return reward
+
+def get_distance(position, goal):
+    #return np.abs(position - np.array(self.goal)).sum()
+    return np.linalg.norm(position - np.array(goal))
+
+def main(epochs = 10,
+        batch_size = 10,
+        learning_rate = 0.05,
+        steps = 100,
+        training_game_size = 10):
 
     # layers
     layers = [{"size":5,"activation":"tanh"},
                 {"size":5,"activation":"tanh"}]
 
     # number of epochs for training
-    epochs = 10
-    batch_size = 1
+    epochs = epochs
+    batch_size = batch_size
 
     # learning rate
-    learning_rate = 0.05
+    learning_rate = learning_rate
+
+    # number of steps to take
+    steps = steps
+
     # optimizer
     optimizer = sgd(lr=learning_rate)
     optimizer_str = "SGD(lr = "+str(learning_rate)+")"
@@ -142,11 +141,8 @@ if __name__=='__main__':
 
     # prepare the game for collecting data
     # this has no model, so it uses the "perfect" strategy defined within
-    test_game = NaviGame(8, 8, goal = (3, 3), model = None)
+    test_game = NaviGame(training_game_size, training_game_size, moving_target = True)
     test_game.setup()
-
-    # number of steps to take from each game
-    steps = 1000
 
     print("Generating training data")
     # collect all data to make pickled runs!
@@ -162,3 +158,7 @@ if __name__=='__main__':
     # pull data points of for validation
     print("Network and final validation data ready for testing.")
         # prepare the game for final validation
+    return model
+
+if __name__=='__main__':
+    model = main()
