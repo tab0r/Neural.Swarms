@@ -1,6 +1,6 @@
-
+ 
 ## Project Proposal: Neural.Swarms
-Tabor Henderson, May 23, 2017
+Tabor Henderson, May 24, 2017
 
 
 **High Level Description**
@@ -19,7 +19,7 @@ Through the problem of swarm intelligence, I hope to answer fundamental question
 
 **Next Step**
 
-I have a simulation engine in which I can build agents and deterministic strategies. Using this engine I have succesfully trained basic navigator neural agents which perform as well as the deterministic strategy. The next step is to implement reinforcement learning in the engine and hopefully train neural agents which outperform the deterministic strategy. Performance is measured case-by-case, as different simulations have different goals.
+I have a simulation engine in which I can build agents and deterministic strategies. Using this engine I have successfully trained basic navigator neural agents which perform as well as the deterministic strategy. The next step is to explore reinforcement learning in the engine and hopefully train neural agents which outperform the deterministic strategy. Performance is measured case-by-case, as different simulations have different goals.
 
 
 **Data**
@@ -40,7 +40,6 @@ I have a simulation engine in which I can build agents and deterministic strateg
 ** Anticipated Bottlenecks **
 
 - Simulation construction: I have simulations online, but fine tuning it to a state where it can model space will take substantial time. I am taking the approach of incremental developments. Currently, I could even freeze my simulation code and focus on studying the fundamental neural network questions mentioned above.
-- Reinforcement learning implementation: So far, the trainer uses reinforcement from a deterministic strategy. This, of course, requires that strategy, and there's no reason to expect the network to outperform that data. So, I need to switch to reinforcement learning as soon as possible. This will allow me to implement a explore/exploit function in the model so it can discover more optimal strategies. I am going through the Udacity course as fast as possible, and hope to have it implemented within a week.
 - Performance metrics: Since each simulation has slightly different metrics of success, I have no way to compare models yet. But, since the final goal is a robust swarm AI, it's not necessary to focus on metrics until I achieve basic successes on differing tasks with a single model. Then, models can be rated on categories of tasks, like cooperation, navigation, and memory.
 - Technology deployment: I have sucessfully connected and sent commands to the Sphero robots, but have yet to set up sensor streaming. I will have to add the functionality to the Kulka module.
 - Technology incompatibilities: The Bluetooth libraries I need to connect to the robots are not available on macOS, and I the Linux kernel does not support my model of MacBook. So, I'll need to test code on the Mac Minis or an old laptop my brother dug up for me.
@@ -63,4 +62,6 @@ I have a simulation engine in which I can build agents and deterministic strateg
 - Supervised: Inputs are two pairs of coordinates, one is the agents position, the second is the goal position. Targets are the action the deterministic strategy takes
     - Inputs: `[3, 4, 0, 3], [2, 4, 0, 3], [1, 4, 0, 3], [0, 4, 0, 3], [0, 4, 0, 3]`
     - Targets: `[0, 0, 0, 0, 1], [0, 0, 0, 0, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0]`
-- Reinforcement: Not yet available, but I am working on adapting the code to provide rewards as targets, rather than the choices of a deterministic strategy.
+- Reinforcement: Inputs are as above, outputs are predictions on the reward value of the input
+    - Inputs: `[0, 6, 0, 2], [0, 5, 0, 2], [0, 4, 0, 2], [0, 3, 0, 2]`
+    - Targets: `-0.1, -0.1, -0.1, 0.9`

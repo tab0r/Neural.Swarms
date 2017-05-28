@@ -16,5 +16,5 @@ It's coded with Python 3.6 on Mac OS X.
 
 For detailed development notes, see
 ```
-/notebooks/Research Program.ipynb
+/notes/
 ```
