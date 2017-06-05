@@ -22,13 +22,13 @@ class NeuralNaviGame(NaviGame):
     def __init__(self,
             height,
             width,
-            goal = (0, 0),
+            model_type = "reinforcement",
             model = None,
-            # model_type = "supervised",
+            goal = (0, 0),
             moving_target = False):
         NaviGame.__init__(self, height, width, goal, moving_target)
         self.model = model
-        # self.model_type = model_type
+        self.model_type = model_type
 
     def setup(self):
         self.Flag = Figure(self.board)
@@ -36,43 +36,74 @@ class NeuralNaviGame(NaviGame):
         self.Flag.strategy.placeIt(self.goal[0], self.goal[1])
         self.Flag.color = 2
         self.Navigator = Figure(self.board)
-        self.Navigator.bindStrategy(ReinforcementStrategy(self.goal, self.model))
+        if self.model_type == "supervised":
+            strategy = SupervisedStrategy(self.goal, self.model)
+        else:
+            strategy = ReinforcementStrategy(self.goal, self.model)
+        self.Navigator.bindStrategy(strategy)
         self.Navigator.strategy.placeIt()
         self.Navigator.color = 1
 
 # navigator to get to target
 class ReinforcementStrategy(NaviStrategy):
-    def __init__(self, goal, model, model_type = "supervised"):
+    def __init__(self, goal, model):
         self.model = model
-        self.model_type = model_type
         self.last_reward = 0
         NaviStrategy.__init__(self, goal)
 
-    def plan_movement(self):
+    def plan_movement(self, position = None):
         d = np.random.random()
         if d < .1:
             choice = randint(0, 4)
         else:
             predictions = []
             for action in self.actions:
-                pos = self.figure.position()
+                if position == None:
+                    pos = self.figure.position()
+                else:
+                    pos = position
                 new_pos = (pos[0]+action[0], pos[1]+action[1])
+                # pdb.set_trace()
                 ipt = self.get_input(position = new_pos)
                 predict = self.model.predict(np.array(ipt).reshape(1, 5))
                 predictions.append(predict[0][0])
                 choice = np.argmax(predictions)
         return choice
 
-    def get_input(self, position):
+    def get_input(self, position = None):
         ipt = NaviStrategy.get_input(self, position)
         ipt.append(self.last_reward)
         return ipt
+
+    def get_reward(self, position = None, look_forward = 50, depth = 0):
+        if position == None:
+            position = self.figure.position()
+        goal = self.goal
+        dist = self.get_distance(position, goal)
+        reward = -0.1
+        if (dist == 1.0):
+            reward += 10
+        elif depth < look_forward:
+            next_depth = depth + 1
+            choice = self.plan_movement()
+            action = self.actions[choice]
+            next_pos = (position[0]+action[0], position[1]+action[1])
+            reward += self.get_reward(position = next_pos, look_forward = look_forward, depth = next_depth)
+        return reward
+
+    def get_distance(self, position, goal):
+        #return np.abs(position - np.array(self.goal)).sum()
+        return np.linalg.norm(position - np.array(goal))
+
+    def step(self):
+        NaviStrategy.step(self)
+        self.last_reward = self.get_reward()
+
 
 # navigator to get to target
 class SupervisedStrategy(NaviStrategy):
     def __init__(self, goal, model):
         self.model = model
-        self.model_type = model_type
         NaviStrategy.__init__(self, goal)
 
     def plan_movement(self, force_det = False):
