@@ -22,11 +22,10 @@ class NeuralNaviGame(NaviGame):
     def __init__(self,
             height,
             width,
-            model_type = "reinforcement",
-            model = None,
-            goal = (0, 0),
-            moving_target = False):
-        NaviGame.__init__(self, height, width, goal, moving_target)
+            model,
+            model_type = "reinforcement"):
+        NaviGame.__init__(self, height, width,
+                            goal = None, moving_target = True)
         self.model = model
         self.model_type = model_type
 
@@ -44,17 +43,22 @@ class NeuralNaviGame(NaviGame):
         self.Navigator.strategy.placeIt()
         self.Navigator.color = 1
 
-# navigator to get to target
+# Reinforcement Learning strategy - sketchy af
 class ReinforcementStrategy(NaviStrategy):
     def __init__(self, goal, model):
+        # Deep-Q recurrent network
         self.model = model
+        # last reward for recurrent input
+        # currently should be the received reward at the last position
         self.last_reward = 0
         NaviStrategy.__init__(self, goal)
 
     def plan_movement(self, position = None):
         d = np.random.random()
-        if d < .1:
+        # explore 5% of the time
+        if d < .05:
             choice = randint(0, 4)
+        # exploit current Q-function
         else:
             predictions = []
             for action in self.actions:
@@ -68,27 +72,34 @@ class ReinforcementStrategy(NaviStrategy):
                 predict = self.model.predict(np.array(ipt).reshape(1, 5))
                 predictions.append(predict[0][0])
                 choice = np.argmax(predictions)
-        return choice
+        return self.actions[choice]
 
     def get_input(self, position = None):
         ipt = NaviStrategy.get_input(self, position)
         ipt.append(self.last_reward)
         return ipt
 
-    def get_reward(self, position = None, look_forward = 50, depth = 0):
+    def predict_quality(self, position = None, look_forward = 20, depth = 0):
+        if position == None:
+            position = self.figure.position()
+        quality = self.get_reward(position = position)
+        if depth < look_forward:
+            next_depth = depth + 1
+            # predicts on each action and returns max Q prediction
+            action = self.plan_movement(position = position)
+            next_pos = (position[0]+action[0], position[1]+action[1])
+            quality += self.predict_quality(position = next_pos, look_forward = look_forward, depth = next_depth)
+        return quality
+
+    def get_reward(self, position = None):
         if position == None:
             position = self.figure.position()
         goal = self.goal
         dist = self.get_distance(position, goal)
-        reward = -0.1
         if (dist == 1.0):
-            reward += 10
-        elif depth < look_forward:
-            next_depth = depth + 1
-            choice = self.plan_movement()
-            action = self.actions[choice]
-            next_pos = (position[0]+action[0], position[1]+action[1])
-            reward += self.get_reward(position = next_pos, look_forward = look_forward, depth = next_depth)
+            reward = 10
+        else:
+            reward = -1
         return reward
 
     def get_distance(self, position, goal):
@@ -99,8 +110,7 @@ class ReinforcementStrategy(NaviStrategy):
         NaviStrategy.step(self)
         self.last_reward = self.get_reward()
 
-
-# navigator to get to target
+# Supervised learning strategy
 class SupervisedStrategy(NaviStrategy):
     def __init__(self, goal, model):
         self.model = model

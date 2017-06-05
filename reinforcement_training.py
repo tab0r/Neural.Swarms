@@ -19,7 +19,7 @@ from keras.layers.core import Dense
 from keras.optimizers import sgd, RMSprop, Adagrad
 import theano
 
-def baseline_model(optimizer = sgd(lr = 0.000001),
+def baseline_model(optimizer = sgd(lr = 0.001),
                     layers = [{"size":20,"activation":"relu"}]):
     # five inputs - one for each coordinate, and last reward
     # one output - returns the predicted reward for a next state
@@ -43,31 +43,49 @@ def baseline_model(optimizer = sgd(lr = 0.000001),
     return model
 
 def train_model(game, model, episodes = 10, steps = 50):
-    log = []
-    desc = "Network training start"
+    log, replay_log = [], []
+    wins = 0
+    desc = "Network training starting"
     # set up tqdm progress bar to display loss dynamically
+    replay_inputs = []
+    replay_targets = []
     t = trange(episodes, desc=desc, leave=True)
     for j in t:
         inputs, targets = [], []
+        loss = 0
         for i in range(steps):
             position = game.Navigator.position()
+            action = game.Navigator.strategy.plan_movement()
+            next_pos = (position[0]+action[0], position[1]+action[1])
             input_i = game.Navigator.strategy.get_input()
-            target_i = game.Navigator.strategy.last_reward
+            target_i = game.Navigator.strategy.last_reward \
+                + 0.1 * game.Navigator.strategy.predict_quality(position = next_pos)
+            # online learning
+            loss += model.train_on_batch(np.array(input_i).reshape(1, 5),
+            np.array([[target_i]]))
             # experience replay learning
             inputs.append(input_i)
             targets.append(target_i)
-            # online learning
-            model.train_on_batch(np.array(input_i).reshape(1, 5),
-                                np.array([[target_i]]))
+            if game.Navigator.strategy.at_goal == True:
+                wins += 1
             game.step()
+        replay_inputs.append(inputs)
+        replay_targets.append(targets)
         # pdb.set_trace()
-        # experience replay each episode
-        loss = model.train_on_batch(inputs, targets).flatten()[0]
+        # experience replay on a random episode
+        epi = randint(0, len(replay_inputs) - 1)
+        loss_replay = model.train_on_batch(replay_inputs[epi],
+                                    replay_targets[epi]).flatten()[0]
         log.append(loss)
-        desc = "Episode " + str(j) + " loss: " + str(loss)
+        replay_log.append(loss_replay)
+        desc = "Episode " + str(j) + ", Wins: " + str(wins) \
+                + ", Replay Loss: " + str(loss_replay)
         t.set_description(desc)
         t.refresh() # to update progress bar
-    return log
+        # shift goal and set last_reward to 0 so next episode is a "fresh game"
+        game.shift_goal()
+        game.Navigator.strategy.last_reward = 0
+    return log, replay_log
 
 def main(training_game_size = 10, training_episodes = 10, steps = 100):
     # make the model
@@ -79,9 +97,8 @@ def main(training_game_size = 10, training_episodes = 10, steps = 100):
     # prepare the game for training model
     training_game = NeuralNaviGame(training_game_size,
                                     training_game_size,
-                                    model_type = "reinforcement",
-                                    model = model,
-                                    moving_target = True)
+                                    model,
+                                    model_type = "reinforcement")
     training_game.setup()
 
     # print("Training model")

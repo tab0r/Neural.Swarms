@@ -146,7 +146,10 @@ def main(epochs = 10,
 
     # prepare the game for collecting data
     # this has no model, so it uses the "perfect" strategy defined within
-    test_game = NaviGame(training_game_size, training_game_size, moving_target = True)
+    test_game = NaviGame(training_game_size,
+                        training_game_size,
+                        model_type = "supervised",
+                        moving_target = True)
     test_game.setup()
 
     print("Generating training data")
