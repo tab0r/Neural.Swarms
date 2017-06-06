@@ -16,12 +16,13 @@ from neural_navi_game import *
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Dense
-from keras.optimizers import sgd, RMSprop, Adagrad
+from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
 import theano
 
-def baseline_model(optimizer = sgd(lr = 0.0001),
+def baseline_model(optimizer = sgd(lr = 0.001),
                     layers = [{"size":20,"activation":"relu"}]):
-    # five inputs - one for each coordinate, and last reward
+    # five inputs - each coordinate, and action selection
+    inputs = 5
     # one output - returns the predicted reward for a next state
     num_outputs = 1
     # prepare the navigator model
@@ -31,7 +32,7 @@ def baseline_model(optimizer = sgd(lr = 0.0001),
     l0 = l[0]
     del l[0]
     model.add(Dense(l0['size'],
-                    input_dim = 5,
+                    input_dim = inputs,
                     activation = l0['activation']))
     # the hidden layers
     for layer in l:
@@ -42,7 +43,9 @@ def baseline_model(optimizer = sgd(lr = 0.0001),
                     loss = "mean_squared_error")
     return model
 
-def train_model(game, model, episodes = 10, steps = 50):
+def train_model(game, model, episodes = 10, steps = 2):
+    initial_e, final_e = 1, .1
+    e_delta = initial_e - final_e /10
     log, replay_log = [], []
     wins = 0
     desc = "Network training starting"
@@ -53,32 +56,36 @@ def train_model(game, model, episodes = 10, steps = 50):
     for j in t:
         inputs, targets = [], []
         loss = 0
+        e = initial_e - j * e_delta
         for i in range(steps):
-            position = game.Navigator.position()
-            choice = game.Navigator.strategy.plan_movement()
-            action = game.Navigator.strategy.actions[choice]
-            next_pos = (position[0]+action[0], position[1]+action[1])
-            input_i = game.Navigator.strategy.get_input()
+            # feedforward pass which defines the next state
+            choice = game.Navigator.strategy.plan_movement(e)
+            # save network input data from above, which is our [s, a]
+            input_i = game.Navigator.strategy.get_input(choice)
+            # move to s'
+            game.step()
+            # update our Q[s,a] using the reward we get and
+            # the quality prediction for our new state
             target_i = game.Navigator.strategy.last_reward \
-                + game.Navigator.strategy.predict_quality(position = next_pos)
+                + game.Navigator.strategy.get_quality()
             # online learning
             loss += model.train_on_batch(np.array(input_i).reshape(1, 5),
-            np.array([[target_i]]))
+                                        np.array(target_i))
             # experience replay learning
             inputs.append(input_i)
             targets.append(target_i)
-            if game.Navigator.strategy.at_goal == True:
-                wins += 1
-            game.step()
+            if game.Navigator.strategy.at_goal == True: wins += 1
         replay_inputs.append(inputs)
         replay_targets.append(targets)
         # pdb.set_trace()
         # experience replay on a random episode
         epi = randint(0, len(replay_inputs) - 1)
-        loss_replay = model.train_on_batch(replay_inputs[epi],
-                                    replay_targets[epi]).flatten()[0]
+        replay_i = np.array(replay_inputs[epi])
+        replay_t = np.array(replay_targets[epi]).flatten()
+        loss_replay = model.train_on_batch(replay_i, replay_t)
+        replay_loss_flay = loss_replay.flatten()[0]
         log.append(loss)
-        replay_log.append(loss_replay)
+        replay_log.append(replay_loss_flay)
         desc = "Episode " + str(j) + ", Wins: " + str(wins) \
                 + ", Replay Loss: " + str(loss_replay)
         t.set_description(desc)
@@ -86,17 +93,19 @@ def train_model(game, model, episodes = 10, steps = 50):
         # shift goal and set last_reward to 0 so next episode is a "fresh game"
         game.shift_goal()
         game.Navigator.strategy.last_reward = 0
-    return log, replay_log
+    # housekeeping to return everything nicely
+    output = dict()
+    output['log'] = log
+    output['replays'] = replay_log
+    output['episodes'] = [replay_inputs, replay_targets]
+    return output
 
 if __name__=='__main__':
     training_game_size = 10
-    training_episodes = 10
-    steps = 100
+    training_episodes = 3
+    steps = 10
     # make the model
-    hiddens = [{"size":20,"activation":"relu"},
-                {"size":20,"activation":"relu"},
-                {"size":20,"activation":"relu"}]
-    model = baseline_model(layers = hiddens)
+    model = baseline_model()
 
     # prepare the game for training model
     training_game = NeuralNaviGame(training_game_size,
@@ -109,3 +118,11 @@ if __name__=='__main__':
                     model = model,
                     episodes = training_episodes,
                     steps = steps)
+
+    print("Training data: ")
+    for i in range(training_episodes):
+        print("Episode ", i)
+        for j in range(steps):
+            inputs = logs['episodes'][0][i][j]
+            targets = logs['episodes'][1][i][j]
+            print(inputs, targets)

@@ -118,11 +118,13 @@ def train_model(navi_game, model, steps = 1000,
     else:
         return log
 
-def main(epochs = 10,
-        batch_size = 10,
-        learning_rate = 0.05,
-        steps = 100,
-        training_game_size = 8):
+if __name__=='__main__':
+    # game variables
+    epochs = 10
+    batch_size = 10
+    learning_rate = 0.05
+    steps = 100
+    training_game_size = 8
 
     # layers
     layers = [{"size":5,"activation":"tanh"},
@@ -165,7 +167,3 @@ def main(epochs = 10,
     # pull data points of for validation
     print("Network and final validation data ready for testing.")
         # prepare the game for final validation
-    return model
-
-if __name__=='__main__':
-    main()

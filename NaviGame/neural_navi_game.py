@@ -53,49 +53,39 @@ class ReinforcementStrategy(NaviStrategy):
         self.last_reward = 0
         NaviStrategy.__init__(self, goal)
 
-    def plan_movement(self, position = None):
+    def plan_movement(self, e = 0.05, position = None):
         d = np.random.random()
         # explore 5% of the time
-        if d < .05:
+        if d < e:
             choice = randint(0, 4)
         # exploit current Q-function
         else:
             predictions = []
-            for action in self.actions:
-                if position == None:
-                    pos = self.figure.position()
-                else:
-                    pos = position
-                new_pos = (pos[0]+action[0], pos[1]+action[1])
+            # for action in self.actions:
+            for i in range(5):
                 # pdb.set_trace()
-                ipt = self.get_input(position = new_pos)
+                ipt = self.get_input(i)
                 predict = self.model.predict(np.array(ipt).reshape(1, 5))
                 predictions.append(predict[0][0])
-                choice = np.argmax(predictions)
+            choice = np.argmax(predictions)
         # return self.actions[choice]
         return choice
 
-    def get_input(self, position = None):
+    def get_input(self, choice, position = None):
         ipt = NaviStrategy.get_input(self, position)
-        ipt.append(self.last_reward)
+        # ipt.append(self.last_reward)
+        ipt.append(choice)
         return ipt
 
-    def predict_quality(self, position = None, look_forward = 20, depth = 0):
-        if position == None:
-            position = self.figure.position()
-        quality = self.get_reward(position = position)
-        if depth < look_forward:
-            next_depth = depth + 1
-            # predicts on each action and gets max Q prediction
-            choice = self.plan_movement(position = position)
-            action = self.actions[choice]
-            next_pos = (position[0]+action[0], position[1]+action[1])
-            quality += self.predict_quality(position = next_pos, look_forward = look_forward, depth = next_depth)
+    def get_quality(self):
+        quality = self.get_reward()
+        choice = self.plan_movement()
+        ipt = self.get_input(choice)
+        quality += self.model.predict(np.array(ipt).reshape(1, 5))
         return quality
 
-    def get_reward(self, position = None):
-        if position == None:
-            position = self.figure.position()
+    def get_reward(self):
+        position = self.figure.position()
         goal = self.goal
         dist = self.get_distance(position, goal)
         if (dist == 1.0):
