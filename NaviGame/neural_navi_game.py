@@ -7,7 +7,7 @@ import numpy as np
 import pdb
 import sys
 import os
-sys.path.append(os.path.abspath("../Python.Swarms/"))
+sys.path.append(os.path.abspath("../../Python.Swarms/"))
 
 # game imports
 from random import random, sample, randint

@@ -60,7 +60,7 @@ def train_model(game, model, episodes = 10, steps = 50):
             next_pos = (position[0]+action[0], position[1]+action[1])
             input_i = game.Navigator.strategy.get_input()
             target_i = game.Navigator.strategy.last_reward \
-                + 0.1 * game.Navigator.strategy.predict_quality(position = next_pos)
+                + game.Navigator.strategy.predict_quality(position = next_pos)
             # online learning
             loss += model.train_on_batch(np.array(input_i).reshape(1, 5),
             np.array([[target_i]]))
@@ -88,9 +88,13 @@ def train_model(game, model, episodes = 10, steps = 50):
         game.Navigator.strategy.last_reward = 0
     return log, replay_log
 
-def main(training_game_size = 10, training_episodes = 10, steps = 100):
+if __name__=='__main__':
+    training_game_size = 10
+    training_episodes = 10
+    steps = 100
     # make the model
     hiddens = [{"size":20,"activation":"relu"},
+                {"size":20,"activation":"relu"},
                 {"size":20,"activation":"relu"}]
     model = baseline_model(layers = hiddens)
 
@@ -101,12 +105,7 @@ def main(training_game_size = 10, training_episodes = 10, steps = 100):
                                     model_type = "reinforcement")
     training_game.setup()
 
-    # print("Training model")
     logs = train_model(game = training_game,
                     model = model,
                     episodes = training_episodes,
                     steps = steps)
-    return model, logs
-
-if __name__=='__main__':
-    model, log = main()
