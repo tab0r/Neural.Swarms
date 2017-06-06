@@ -55,7 +55,8 @@ def train_model(game, model, episodes = 10, steps = 50):
         loss = 0
         for i in range(steps):
             position = game.Navigator.position()
-            action = game.Navigator.strategy.plan_movement()
+            choice = game.Navigator.strategy.plan_movement()
+            action = game.Navigator.strategy.actions[choice]
             next_pos = (position[0]+action[0], position[1]+action[1])
             input_i = game.Navigator.strategy.get_input()
             target_i = game.Navigator.strategy.last_reward \

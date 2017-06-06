@@ -72,7 +72,8 @@ class ReinforcementStrategy(NaviStrategy):
                 predict = self.model.predict(np.array(ipt).reshape(1, 5))
                 predictions.append(predict[0][0])
                 choice = np.argmax(predictions)
-        return self.actions[choice]
+        # return self.actions[choice]
+        return choice
 
     def get_input(self, position = None):
         ipt = NaviStrategy.get_input(self, position)
@@ -85,7 +86,7 @@ class ReinforcementStrategy(NaviStrategy):
         quality = self.get_reward(position = position)
         if depth < look_forward:
             next_depth = depth + 1
-            # predicts on each action and returns max Q prediction
+            # predicts on each action and gets max Q prediction
             choice = self.plan_movement(position = position)
             action = self.actions[choice]
             next_pos = (position[0]+action[0], position[1]+action[1])
