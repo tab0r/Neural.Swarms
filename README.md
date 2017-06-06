@@ -1,14 +1,17 @@
 # Neural.Swarms
-Python swarm simulation with neural net based agents. Once development reaches a certain goal, everything will move over to Sphero.Swarms, where I'll try to deploy the agents to Sphero robot balls using the kulka library.
+Python swarm simulation with neural net based agents. Mainly focused on the NaviGame in my fork of [Python.Swarms](https://github.com/thetabor/Python.Swarms/), but the way I extend the game to allow a neural net is applicable to all of the games. I am exploring both supervised and reinforcement learning for the agent. For a nice visual display, see:
 
 ```
-/notebooks/display_game.ipynb
+/NaviGame/Reinforcement Model Training.ipynb
+/NaviGame/Supervised Model Training.ipynb
 ```
 
-Framework to create different swarms by writing classes of swarm behaviour strategies.
+If you just want to train models or want to display somehow other than with a jupyter notebook, use these files:
 
-The strategy can either result from the behaviour of the single figures (like ants, bees or robots)
-or be fully supervised on the game level like in chess or be a combination of both like in economy, society or war.
+```
+/NaviGame/reinforcement_training.py
+/NaviGame/supervised_training.py
+```
 
 The program uses python, jupyter, and keras with a theano back end. It will run on most Unix (Linux, Mac) but probably not directly on Windows.
 

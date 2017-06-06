@@ -37,7 +37,7 @@ def baseline_model(optimizer = sgd(lr = 0.0001),
     for layer in l:
         model.add(Dense(layer['size'], activation=layer['activation']))
     # the output layer
-    model.add(Dense(num_outputs, activation='sigmoid'))
+    model.add(Dense(num_outputs, activation='relu'))
     model.compile(optimizer = optimizer,
                     loss = "mean_squared_error")
     return model
@@ -90,9 +90,8 @@ def train_model(game, model, episodes = 10, steps = 50):
 
 def main(training_game_size = 10, training_episodes = 10, steps = 100):
     # make the model
-    hiddens = [{"size":10,"activation":"relu"},
-                {"size":10,"activation":"relu"},
-                {"size":10,"activation":"relu"}]
+    hiddens = [{"size":20,"activation":"relu"},
+                {"size":20,"activation":"relu"}]
     model = baseline_model(layers = hiddens)
 
     # prepare the game for training model
