@@ -19,7 +19,7 @@ from keras.layers.core import Dense
 from keras.optimizers import sgd, RMSprop, Adagrad
 import theano
 
-def baseline_model(optimizer = sgd(lr = 0.001),
+def baseline_model(optimizer = sgd(lr = 0.0001),
                     layers = [{"size":20,"activation":"relu"}]):
     # five inputs - one for each coordinate, and last reward
     # one output - returns the predicted reward for a next state

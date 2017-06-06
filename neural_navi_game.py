@@ -86,7 +86,8 @@ class ReinforcementStrategy(NaviStrategy):
         if depth < look_forward:
             next_depth = depth + 1
             # predicts on each action and returns max Q prediction
-            action = self.plan_movement(position = position)
+            choice = self.plan_movement(position = position)
+            action = self.actions[choice]
             next_pos = (position[0]+action[0], position[1]+action[1])
             quality += self.predict_quality(position = next_pos, look_forward = look_forward, depth = next_depth)
         return quality
