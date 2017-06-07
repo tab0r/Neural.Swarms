@@ -23,9 +23,12 @@ class NeuralNaviGame(NaviGame):
             height,
             width,
             model,
-            model_type = "reinforcement"):
+            model_type = "reinforcement",
+            tolerance = 1.0):
         NaviGame.__init__(self, height, width,
-                            goal = None, moving_target = True)
+                            goal = None,
+                            moving_target = True,
+                            tolerance = tolerance)
         self.model = model
         self.model_type = model_type
 
@@ -38,20 +41,21 @@ class NeuralNaviGame(NaviGame):
         if self.model_type == "supervised":
             strategy = SupervisedStrategy(self.goal, self.model)
         else:
-            strategy = ReinforcementStrategy(self.goal, self.model)
+            strategy = ReinforcementStrategy(self.goal, self.model,
+                                        tolerance = self.tolerance)
         self.Navigator.bindStrategy(strategy)
         self.Navigator.strategy.placeIt()
         self.Navigator.color = 1
 
 # Reinforcement Learning strategy - sketchy af
 class ReinforcementStrategy(NaviStrategy):
-    def __init__(self, goal, model):
-        # Deep-Q recurrent network
+    def __init__(self, goal, model, tolerance):
+        # Deep-Q network
         self.model = model
         # last reward for recurrent input
         # currently should be the received reward at the last position
         self.last_reward = 0
-        NaviStrategy.__init__(self, goal)
+        NaviStrategy.__init__(self, goal, tolerance)
 
     def plan_movement(self, e = 0.05, position = None):
         d = np.random.random()
@@ -78,28 +82,21 @@ class ReinforcementStrategy(NaviStrategy):
         return ipt
 
     def get_quality(self):
-        quality = self.get_reward()
+        # quality = self.get_reward()
         choice = self.plan_movement()
         ipt = self.get_input(choice)
-        quality += self.model.predict(np.array(ipt).reshape(1, 5))
+        quality = self.model.predict(np.array(ipt).reshape(1, 5))
         return quality
 
-    def get_reward(self):
-        position = self.figure.position()
-        goal = self.goal
-        dist = self.get_distance(position, goal)
-        if (dist == 1.0):
-            reward = 10
+    def get_reward(self, step = -0.01, goal = 1):
+        if self.at_goal > 1:
+            reward = goal
         else:
-            reward = -1
+            reward = step
         return reward
 
-    def get_distance(self, position, goal):
-        #return np.abs(position - np.array(self.goal)).sum()
-        return np.linalg.norm(position - np.array(goal))
-
-    def step(self):
-        NaviStrategy.step(self)
+    def step(self, choice = None):
+        NaviStrategy.step(self, choice)
         self.last_reward = self.get_reward()
 
 # Supervised learning strategy
