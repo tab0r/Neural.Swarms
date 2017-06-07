@@ -21,10 +21,10 @@ import theano
 
 def baseline_model(optimizer = sgd(lr = 0.001),
                     layers = [{"size":20,"activation":"relu"}]):
-    # five inputs - each coordinate, and action selection
-    inputs = 5
-    # one output - returns the predicted reward for a next state
-    num_outputs = 1
+    # four inputs - each coordinate
+    inputs = 4
+    # five outputs - one for each action
+    num_outputs = 5
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -49,6 +49,7 @@ def train_model(game, model, episodes = 10, steps = 2):
     gamma = 1
     e_delta = initial_e - final_e / episodes
     wins = 0
+    reward_total = 0
     desc = "Network training starting"
     # set up tqdm progress bar to display loss dynamically
     log, replay_log, replay_inputs, replay_targets, rewards = [],[],[],[],[]
@@ -61,6 +62,7 @@ def train_model(game, model, episodes = 10, steps = 2):
 
         # play through episode
         for i in range(steps):
+            # why isn't this working?
             if game.Navigator.strategy.at_goal >= 1:
                 wins += 1
                 break
@@ -70,7 +72,7 @@ def train_model(game, model, episodes = 10, steps = 2):
             choice = game.Navigator.strategy.plan_movement(e)
 
             # save network input data from above, which is our [s, a]
-            input_i = game.Navigator.strategy.get_input(choice)
+            input_i = game.Navigator.strategy.get_input()
 
             # move to s'
             game.step()
@@ -78,9 +80,12 @@ def train_model(game, model, episodes = 10, steps = 2):
             # update our Q[s,a] using the reward we get and
             # the quality prediction for our new state
             reward = game.Navigator.strategy.last_reward
-            target_i = reward + gamma * game.Navigator.strategy.get_quality()
+            reward_total += reward
+            target_i = np.zeroes(5)
+            target_i[choice] = \
+                    reward + gamma * game.Navigator.strategy.get_quality()
             # online learning
-            loss += model.train_on_batch(np.array(input_i).reshape(1, 5),
+            loss += model.train_on_batch(np.array(input_i).reshape(1, 4),
                                         np.array(target_i))
 
             # store data for experience replay learning
@@ -115,6 +120,9 @@ def train_model(game, model, episodes = 10, steps = 2):
     return output
 
 if __name__=='__main__':
+    debug = int(input("Debug? (0/1): "))
+    if debug == 1:
+        pdb.set_trace()
     training_game_size = int(input("Training game size: "))
     training_episodes = int(input("Training episodes: "))
     steps = int(input("Steps per episode: "))

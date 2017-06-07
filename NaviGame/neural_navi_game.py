@@ -65,27 +65,18 @@ class ReinforcementStrategy(NaviStrategy):
         # exploit current Q-function
         else:
             predictions = []
-            # for action in self.actions:
-            for i in range(5):
-                # pdb.set_trace()
-                ipt = self.get_input(i)
-                predict = self.model.predict(np.array(ipt).reshape(1, 5))
-                predictions.append(predict[0][0])
+            ipt = self.get_input()
+            predict = self.model.predict(np.array(ipt).reshape(1, 4))
             choice = np.argmax(predictions)
-        # return self.actions[choice]
         return choice
 
-    def get_input(self, choice, position = None):
+    def get_input(self, position = None):
         ipt = NaviStrategy.get_input(self, position)
-        # ipt.append(self.last_reward)
-        ipt.append(choice)
         return ipt
 
     def get_quality(self):
-        # quality = self.get_reward()
-        choice = self.plan_movement()
-        ipt = self.get_input(choice)
-        quality = self.model.predict(np.array(ipt).reshape(1, 5))
+        ipt = self.get_input()
+        quality = self.model.predict(np.array(ipt).reshape(1, 4))
         return quality
 
     def get_reward(self, step = -0.01, goal = 1):
