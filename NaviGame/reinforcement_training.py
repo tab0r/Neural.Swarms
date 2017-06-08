@@ -2,15 +2,19 @@
 import pandas as pd
 import numpy as np
 import pylab as pl
-import pickle
-import os
-import pdb
+import pickle, os, sys, pdb
 from collections import Counter
 from tqdm import *
 from notebook_game_helper import draw_game, animate_game
+sys.path.append(os.path.abspath("../../Python.Swarms/"))
 
-# import the game
-from neural_navi_game import *
+# game imports
+from random import random, sample, randint
+from game import BoardGame
+from board import Board
+from figure import Figure, FigureStrategy
+from logger import log
+from navi_game import *
 
 # imports for neural net
 from keras.utils import np_utils
@@ -18,6 +22,63 @@ from keras.models import Sequential
 from keras.layers.core import Dense
 from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
 import theano
+
+# Navigator game main class
+class ReinforcementNaviGame(NaviGame):
+    def __init__(self, height, width, model, tolerance = 2, goal_idle = 1):
+        NaviGame.__init__(self, height, width,
+                            goal = (int(height/2), int(width/2)),
+                            moving_target = False,
+                            tolerance = tolerance,
+                            goal_idle = goal_idle)
+        self.model = model
+
+    def setup(self):
+        NaviGame.setup(self)
+        self.strategy = ReinforcementStrategy(
+                            self.goal,
+                            self.model,
+                            tolerance = self.tolerance,
+                            idle_t = self.goal_idle)
+        self.Navigator.bindStrategy(self.strategy)
+
+# Reinforcement Learning strategy - sketchy af but kinda works
+class ReinforcementStrategy(NaviStrategy):
+    def __init__(self, goal, model, tolerance, idle_t):
+        # Deep-Q network
+        self.model = model
+        self.last_reward = 0
+        self.idle_t = idle_t
+        NaviStrategy.__init__(self, goal, tolerance)
+
+    def plan_movement(self, e = 0.05, position = None):
+        d = np.random.random()
+        # explore 5% of the time
+        if d < e:
+            choice = randint(0, 4)
+        # exploit current Q-function
+        else:
+            ipt, _ = self.get_input()
+            predictions = self.model.predict(np.array(ipt).reshape(1, 4))
+            choice = np.argmax(predictions)
+        return choice
+
+    def get_quality(self):
+        ipt, _ = self.get_input()
+        quality = self.model.predict(np.array(ipt).reshape(1, 4))
+        return quality
+
+    def get_reward(self, step = -0.1, goal = 1):
+        if self.at_goal > self.idle_t:
+            reward = goal
+            self.wins += 1
+        else:
+            reward = step
+        return reward
+
+    def step(self, choice = None):
+        self.last_reward = self.get_reward()
+        NaviStrategy.step(self, choice)
 
 def baseline_model(optimizer = sgd(lr = 0.001),
                     layers = [{"size":20,"activation":"relu"}]):
@@ -135,10 +196,9 @@ if __name__=='__main__':
     model = baseline_model()
 
     # prepare the game for training model
-    training_game = NeuralNaviGame(training_game_size,
+    training_game = ReinforcementNaviGame(training_game_size,
                                     training_game_size,
-                                    model,
-                                    model_type = "reinforcement")
+                                    model)
     training_game.setup()
 
     logs = train_model(game = training_game,
