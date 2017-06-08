@@ -24,11 +24,13 @@ class NeuralNaviGame(NaviGame):
             width,
             model,
             model_type = "reinforcement",
-            tolerance = 1.0):
+            tolerance = 2,
+            goal_idle = 1):
         NaviGame.__init__(self, height, width,
                             goal = None,
                             moving_target = True,
-                            tolerance = tolerance)
+                            tolerance = tolerance,
+                            goal_idle = goal_idle)
         self.model = model
         self.model_type = model_type
 
@@ -41,20 +43,22 @@ class NeuralNaviGame(NaviGame):
         if self.model_type == "supervised":
             strategy = SupervisedStrategy(self.goal, self.model)
         else:
-            strategy = ReinforcementStrategy(self.goal, self.model,
-                                        tolerance = self.tolerance)
+            strategy = ReinforcementStrategy(
+                            self.goal,
+                            self.model,
+                            tolerance = self.tolerance,
+                            idle_t = self.goal_idle)
         self.Navigator.bindStrategy(strategy)
         self.Navigator.strategy.placeIt()
         self.Navigator.color = 1
 
 # Reinforcement Learning strategy - sketchy af
 class ReinforcementStrategy(NaviStrategy):
-    def __init__(self, goal, model, tolerance):
+    def __init__(self, goal, model, tolerance, idle_t):
         # Deep-Q network
         self.model = model
-        # last reward for recurrent input
-        # currently should be the received reward at the last position
         self.last_reward = 0
+        self.idle_t = idle_t
         NaviStrategy.__init__(self, goal, tolerance)
 
     def plan_movement(self, e = 0.05, position = None):
@@ -64,47 +68,27 @@ class ReinforcementStrategy(NaviStrategy):
             choice = randint(0, 4)
         # exploit current Q-function
         else:
-            predictions = []
-            ipt = self.get_input()
-            predict = self.model.predict(np.array(ipt).reshape(1, 4))
+            ipt, _ = self.get_input()
+            predictions = self.model.predict(np.array(ipt).reshape(1, 4))
             choice = np.argmax(predictions)
         return choice
 
-    def get_input(self, position = None):
-        ipt = NaviStrategy.get_input(self, position)
-        return ipt
-
     def get_quality(self):
-        ipt = self.get_input()
+        ipt, _ = self.get_input()
         quality = self.model.predict(np.array(ipt).reshape(1, 4))
         return quality
 
-    def get_reward(self, step = -0.01, goal = 1):
-        if self.at_goal > 1:
+    def get_reward(self, step = -0.1, goal = 1):
+        if self.at_goal > self.idle_t:
             reward = goal
+            self.wins += 1
         else:
             reward = step
         return reward
 
     def step(self, choice = None):
-        NaviStrategy.step(self, choice)
         self.last_reward = self.get_reward()
-
-# Supervised learning strategy
-class SupervisedStrategy(NaviStrategy):
-    def __init__(self, goal, model):
-        self.model = model
-        NaviStrategy.__init__(self, goal)
-
-    def plan_movement(self, force_det = False):
-        det_choice = NaviStrategy.plan_movement(self)
-        if (self.model != None) and (force_det == False): # use the model
-            ipt = self.get_input()
-            predictions = self.model.predict(np.array(ipt).reshape(1, 4))
-            choice = np.argmax(predictions)
-        else: # use the deterministic strategy, once everything is implemented
-            choice = det_choice
-        return choice
+        NaviStrategy.step(self, choice)
 
 if __name__=='__main__':
     test_game = NeuralNaviGame(8, 8, moving_target = True)

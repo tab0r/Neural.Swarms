@@ -48,64 +48,68 @@ def train_model(game, model, episodes = 10, steps = 2):
     # use 1 until we add stochasticity to the model
     gamma = 1
     e_delta = initial_e - final_e / episodes
-    wins = 0
     reward_total = 0
+    r_totals = []
+    loss_log, replay_log, inputs, targets, rewards = [],[],[],[],[]
     desc = "Network training starting"
     # set up tqdm progress bar to display loss dynamically
-    log, replay_log, replay_inputs, replay_targets, rewards = [],[],[],[],[]
     t = trange(episodes, desc=desc, leave=True)
     for j in t:
         # set up variables for episode
-        inputs, targets, ep_rewards = [],[],[]
-        loss = 0
         e = initial_e - j * e_delta
-
+        r_total_ep = 0
         # play through episode
         for i in range(steps):
-            # why isn't this working?
-            if game.Navigator.strategy.at_goal >= 1:
-                wins += 1
-                break
             # feedforward pass which defines the next state
             # note that the e is an epsilon-greedy value,
             # which decreases as training carries on
             choice = game.Navigator.strategy.plan_movement(e)
-
-            # save network input data from above, which is our [s, a]
-            input_i = game.Navigator.strategy.get_input()
+            quality_prediction = game.Navigator.strategy.get_quality()
+            # save network input data from above, which is our <s>
+            ipt, dist = game.Navigator.strategy.get_input()
+            input_i = np.array(ipt).reshape(1, 4)
 
             # move to s'
             game.step()
 
             # update our Q[s,a] using the reward we get and
             # the quality prediction for our new state
-            reward = game.Navigator.strategy.last_reward
+            reward = game.Navigator.strategy.get_reward()
+            quality = reward
+            if dist > game.tolerance:
+                quality += gamma * quality_prediction.flatten()[choice]
+            r_total_ep += reward
             reward_total += reward
-            target_i = np.zeroes(5)
-            target_i[choice] = \
-                    reward + gamma * game.Navigator.strategy.get_quality()
+            r_totals.append(reward_total)
+
+            target_i = quality_prediction
+            target_i[0][choice] = quality
+            target_i = target_i.reshape(1, 5)
             # online learning
-            loss += model.train_on_batch(np.array(input_i).reshape(1, 4),
-                                        np.array(target_i))
+            loss = model.train_on_batch(input_i, target_i)
 
             # store data for experience replay learning
             inputs.append(input_i)
             targets.append(target_i)
-            ep_rewards.append(reward)
-        replay_inputs.append(inputs)
-        replay_targets.append(targets)
-        rewards.append(ep_rewards)
+            rewards.append(reward)
+        loss_log.append(loss)
 
-        # experience replay on a random episode
-        epi = randint(0 + int(j/4), len(replay_inputs) - 1)
-        replay_i = np.array(replay_inputs[epi])
-        replay_t = np.array(replay_targets[epi]).flatten()
+        # experience replay on a random experience
+        # expand to a full "episode" of random experiences
+        if len(inputs) == 1:
+            experience = 0
+        else:
+            lower_limit = int(0.45 * len(inputs))
+            experience = randint(0, max(1, len(inputs)-1))
+        replay_i = inputs[experience]
+        replay_t = targets[experience]
         loss_replay = model.train_on_batch(replay_i, replay_t).flatten()[0]
-        log.append(loss)
         replay_log.append(loss_replay)
+        rt_str = '{0:.3g}'.format(r_total_ep)
         loss_str = '{0:.3g}'.format(loss_replay)
-        desc = "Episode " + str(j) + ", Wins: " + str(wins) \
-                + ", Replay Loss: " + loss_str
+        desc = "Episode " + str(j) + ", Rewards: " + rt_str \
+                + ", Wins: " + str(game.Navigator.strategy.wins)
+                #+ ", Replay Loss: " + loss_str
         t.set_description(desc)
         t.refresh() # to update progress bar
         # shift goal and set last_reward to 0 so next episode is a "fresh game"
@@ -113,10 +117,11 @@ def train_model(game, model, episodes = 10, steps = 2):
         game.Navigator.strategy.last_reward = 0
     # housekeeping to return everything nicely
     output = dict()
-    output['log'] = log
+    output['log'] = loss_log
     output['replays'] = replay_log
-    output['episodes'] = [replay_inputs, replay_targets]
+    output['experiences'] = [inputs, targets]
     output['rewards'] = rewards
+    output['reward_totals'] = r_totals
     return output
 
 if __name__=='__main__':
@@ -141,13 +146,12 @@ if __name__=='__main__':
                     episodes = training_episodes,
                     steps = steps)
 
-    print("Training data: ")
-    for i in range(training_episodes):
-        print("Episode ", i)
-        for j in range(steps):
-            inputs = logs['episodes'][0][i][j]
-            target = '{0:.3g}'.format(logs['episodes'][1][i][j][0][0])
-            reward = logs['rewards'][i][j]
-            print(inputs, target, reward)
-        print("Episode Total Loss: ", logs['log'][i])
-        print("Episode Replay Loss: ", logs['replays'][i])
+    # print("Training data: ")
+    # for i in range(training_episodes):
+    #     print("Episode ", i)
+    #     for j in range(steps):
+    #         inputs = logs['experiences'][0][i*steps + j]
+    #         target = ['{0:.3g}'.format(num) for num in
+    #                         logs['experiences'][1][i*steps + j][0]]
+    #         reward = logs['rewards'][i*steps + j]
+    #         print(inputs, target, reward)
