@@ -220,6 +220,9 @@ def train_model(game, model, episodes = 10, steps = 2):
     return output
 
 if __name__=='__main__':
+    # import theano
+    # theano.config.device = 'gpu'
+    # theano.config.floatX = 'float32'
     debug = int(input("Debug? (0/1): "))
     if debug == 1:
         pdb.set_trace()
@@ -251,9 +254,7 @@ if __name__=='__main__':
     # prepare the game for training model
     training_game = ReinforcementNaviGame(training_game_size,
                                     training_game_size,
-                                    model,
-                                    tolerance = 1.3,
-                                    goal_idle = 1)
+                                    model)
     training_game.setup()
 
     output = train_model(game = training_game,
