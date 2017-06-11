@@ -21,7 +21,7 @@ from notebook_game_helper import *
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Dense
-from keras.optimizers import sgd, RMSprop, Adagrad
+from keras.optimizers import sgd, RMSprop, Adagrad, Adam
 import theano
 
 # Navigator game main class
@@ -30,7 +30,7 @@ class SupervisedNaviGame(NaviGame):
             height,
             width,
             model = None,
-            tolerance = 2,
+            tolerance = 1.4,
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
                             goal = None,

@@ -13,7 +13,9 @@ def draw_game(game, mpl=True):
         ax = pl.gca()
         ax.set_aspect('equal')
         pl.pcolor(s_colors)
-        pl.colorbar()
+        ax.tick_params(labelbottom='off', labelleft='off')
+        # pl.colorbar()
+        pl.title(game.display_str)
         pl.show();
     else:
         print(s_colors)
