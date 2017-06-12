@@ -3,7 +3,7 @@ import pylab as pl
 import numpy as np
 from IPython import display
 
-def draw_game(game, mpl=True, save = False, filename = "game_image.png"):
+def draw_game(game, mpl=True):
     s = np.array(game.board.cells)
     color = lambda i: 0 if i == None else i.color
     colormask = np.vectorize(color)
@@ -16,7 +16,6 @@ def draw_game(game, mpl=True, save = False, filename = "game_image.png"):
         ax.tick_params(labelbottom='off', labelleft='off')
         # pl.colorbar()
         pl.title(game.display_str)
-        pl.savefig(filename)
         pl.show();
     else:
         print(s_colors)
@@ -35,19 +34,14 @@ def step_test(game, n=10):
         else:
             draw_game(game)
 
-def step_and_draw_game(game, mpl=True, save = False, filename = None):
+def step_and_draw_game(game, mpl=True):
     step_game(game)
-    draw_game(game, mpl, save, filename)
+    draw_game(game, mpl)
 
-def animate_game(game, n, mpl=True, save = False):
+def animate_game(game, n, mpl=True):
     for i in range(n):
-        if (n >= 10) and (i < 10):
-            fn = "0" + str(i)
-        else:
-            fn = str(i)
-        filename =  fn + "_game_anim.png"
-        display.clear_output(wait=True)
-        display.display(step_and_draw_game(game, mpl, save, filename));
+        display.clear_output(wait=True);
+        display.display(step_and_draw_game(game, mpl));
 
 def get_strategies(game):
     for figure in game.board.figures:
