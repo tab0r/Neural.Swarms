@@ -330,3 +330,4 @@ if __name__=='__main__':
     axarr.set_title("Network Grid Test")
     pl.legend()
     pl.savefig("rl_plots_network_test.png")
+    pl.close()
