@@ -196,8 +196,9 @@ def train_model(game, model, episodes = 10, steps = 2):
             if len(inputs) == 1:
                 experience = 0
             else:
-                lower_limit = int(0.75 * len(inputs))
-                experience = randint(lower_limit, max(1, len(inputs)-1))
+                # lower_limit = int(0.75 * len(inputs))
+                # experience = randint(lower_limit, max(1, len(inputs)-1))
+                experience = randint(0, len(inputs)-1)
             replay_i = inputs[experience]
             replay_t = targets[experience]
             loss_replay = model.train_on_batch(replay_i, replay_t).flatten()[0]
