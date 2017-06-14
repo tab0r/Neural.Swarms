@@ -118,6 +118,37 @@ class ReinforcementStrategy(NaviStrategy):
         except:
             self.shift()
 
+class HybridNaviGame(ReinforcementNaviGame):
+    # def __init__(self, height, width, model, tolerance = 2, goal_idle = 1):
+    #     ReinforcementNaviGame.__init__(self, height, width, model,
+    #                     tolerance = tolerance,
+    #                     goal_idle = goal_idle)
+
+    def setup(self):
+        ReinforcementNaviGame.setup(self)
+        self.strategy = HybridStrategy(
+                            goal = self.goal,
+                            model = self.model,
+                            tolerance = self.tolerance,
+                            idle_t = self.goal_idle)
+        self.Navigator.bindStrategy(self.strategy)
+
+# Hybrid Learning strategy - experimental
+class HybridStrategy(ReinforcementStrategy):
+    def plan_movement(self, e = 0.01, position = None):
+        d = np.random.random()
+        # explore/learn e% of the time
+        if d < e:
+            if d < e/2:
+                choice = randint(0, 4)
+            else:
+                choice = NaviStrategy.plan_movement(self)
+        # exploit current Q-function
+        else:
+            _, quality = self.get_quality(mode = 2)
+            choice = np.argmax(quality)
+        return choice
+
 def baseline_model(optimizer = sgd(lr = 0.001),
                     layers = [{"size":20,"activation":"relu"}]):
     # four inputs - each coordinate when we move the goal
@@ -144,8 +175,9 @@ def baseline_model(optimizer = sgd(lr = 0.001),
                     loss = "mean_squared_error")
     return model
 
-def train_model(game, model, episodes = 10, steps = 2):
-    initial_e, final_e = 1, 0
+def train_model(game, model, episodes = 10, steps = 2,
+                            e_start = 1, e_stop = 0):
+    initial_e, final_e = e_start, e_stop
     # use 1 until we add stochasticity to the model
     gamma = 1
     e_delta = initial_e - final_e / episodes
@@ -163,7 +195,7 @@ def train_model(game, model, episodes = 10, steps = 2):
             # feedforward pass which defines the next state
             # note that the e is an epsilon-greedy value,
             # which decreases as training carries on
-            choice = game.Navigator.strategy.plan_movement(e)
+            # choice = game.Navigator.strategy.plan_movement(e)
             input_i, quality_pred = game.Navigator.strategy.get_quality(mode=2)
             # save network input data from above, which is our <s>
             _, dist = game.Navigator.strategy.get_input()
@@ -175,6 +207,7 @@ def train_model(game, model, episodes = 10, steps = 2):
             # update our Q[s,a] using the reward we get and
             # the quality prediction for our new state
             reward = game.Navigator.strategy.get_reward()
+            choice = game.Navigator.strategy.last_choice
             quality = reward
             if dist > game.tolerance:
                 quality += gamma * quality_pred.flatten()[choice]
