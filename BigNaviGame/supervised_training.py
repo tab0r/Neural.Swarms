@@ -40,15 +40,9 @@ class SupervisedNaviGame(NaviGame):
         self.model = model
 
     def setup(self):
-        self.Flag = Figure(self.board)
-        self.Flag.bindStrategy(FlagStrategy())
-        self.Flag.strategy.placeIt(self.goal[0], self.goal[1])
-        self.Flag.color = 2
-        self.Navigator = Figure(self.board)
+        NaviGame.setup(self)
         self.strategy = SupervisedStrategy(self.goal, self.model)
         self.Navigator.bindStrategy(self.strategy)
-        self.Navigator.strategy.placeIt()
-        self.Navigator.color = 1
 
     # in: 4, out: 5
     # by default, uses one ReLU based hidden layer

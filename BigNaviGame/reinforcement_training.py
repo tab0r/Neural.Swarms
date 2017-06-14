@@ -20,6 +20,7 @@ from navi_game import *
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Dense
+from keras.layers import LSTM
 from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
 import theano
 
@@ -70,14 +71,18 @@ class ReinforcementStrategy(NaviStrategy):
             cheat = self.cheater
         # explore 5% of the time
         if d < e:
-            if cheat == True:
+            if (d < e/2) and (cheat == True):
                 choice = NaviStrategy.plan_movement(self)
             else:
                 choice = randint(0, 4)
         # exploit current Q-function
         else:
-            _, quality = self.get_quality(mode = 3)
-            choice = np.argmax(quality)# + self.offset) % 4
+            _, quality = self.get_quality(mode = 0)
+            c = np.argmax(quality)# + self.offset) % 4
+            if c == 5:
+                choice = NaviStrategy.plan_movement(self)
+            else:
+                choice = c
         return choice
 
     def get_quality(self, mode = 0):
@@ -106,7 +111,10 @@ class ReinforcementStrategy(NaviStrategy):
             colormask = [color(i) for i in cells]
             ipt.extend(colormask)
             n = 4 + (self.board.width * self.board.height)
-        ipt = np.array(ipt).reshape(1, n)
+        if mode == 2:
+            ipt = np.array(ipt)
+        else:
+            ipt = np.array(ipt).reshape(1, n)
         quality = self.model.predict(ipt)
         return ipt, quality
 
@@ -137,15 +145,27 @@ class ReinforcementStrategy(NaviStrategy):
         except:
             self.shift()
 
-def baseline_model(optimizer = sgd(lr = 0.001),
-                    layers = [{"size":20,"activation":"relu"}]):
+def baseline_model(optimizer = Adam(lr = 0.00001),
+                    layers = [{"size":20,"activation":"relu"}],
+                    ipt_mode = 0, opt_mode = 0):
     # four inputs - each coordinate when we move the goal
     # two inputs for now, until it's doing reallly good at fixed goals
     # and now 81 inputs, for a pixel value test!
     # now we get 1204 - 1200 pixels for a 40x30 board, plus 4 inputs
-    inputs = 1204
-    # five outputs - one for each action
-    num_outputs = 5
+    if ipt_mode == 0:
+        inputs = 2
+    elif ipt_mode == 1:
+        inputs = 4
+    elif ipt_mode == 2:
+        inputs = (40, 30)
+    elif ipt_mode == 3:
+        inputs = 1204
+    # inputs = 1204
+    # six outputs - one for each action, and one to use det strategy
+    if opt_mode == 1:
+        num_outputs = 6
+    else:
+        num_outputs = 5
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -153,8 +173,12 @@ def baseline_model(optimizer = sgd(lr = 0.001),
     l0 = l[0]
     del l[0]
     model.add(Dense(l0['size'],
-                    input_dim = inputs,
-                    activation = l0['activation']))
+                input_dim = inputs,
+                activation = l0['activation']))
+    # add convolutions if mode == 2
+    if ipt_mode == 2:
+        model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+        model.add(Activation('relu'))
     # the hidden layers
     for layer in l:
         model.add(Dense(layer['size'], activation=layer['activation']))
@@ -164,7 +188,7 @@ def baseline_model(optimizer = sgd(lr = 0.001),
                     loss = "mean_squared_error")
     return model
 
-def train_model(game, model, episodes = 10, steps = 2):
+def train_model(game, model, mode = 0, episodes = 10, steps = 2):
     initial_e, final_e = 1, 0
     # use 1 until we add stochasticity to the model
     gamma = 1
@@ -183,8 +207,8 @@ def train_model(game, model, episodes = 10, steps = 2):
             # feedforward pass which defines the next state
             # note that the e is an epsilon-greedy value,
             # which decreases as training carries on
-            choice = game.Navigator.strategy.plan_movement(e, cheat = True)
-            input_i, quality_pred = game.Navigator.strategy.get_quality(mode=3)
+            choice = game.Navigator.strategy.plan_movement(e, cheat = False)
+            input_i, quality_pred = game.Navigator.strategy.get_quality(mode=0)
             # save network input data from above, which is our <s>
             _, dist = game.Navigator.strategy.get_input()
             distances.append(dist)
@@ -200,7 +224,7 @@ def train_model(game, model, episodes = 10, steps = 2):
                 quality += gamma * quality_pred.flatten()[choice]
             target_i = quality_pred
             target_i[0][choice] = quality
-            target_i = target_i.reshape(1, 5)
+            target_i = target_i.reshape(1, 6)
             # online learning
             loss = model.train_on_batch(input_i, target_i)
 
