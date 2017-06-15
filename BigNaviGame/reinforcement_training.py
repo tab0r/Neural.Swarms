@@ -20,7 +20,6 @@ from navi_game import *
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Dense
-from keras.layers import LSTM
 from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
 import theano
 
@@ -55,34 +54,23 @@ class ReinforcementNaviGame(NaviGame):
 
 # Reinforcement Learning strategy - sketchy af but kinda works
 class ReinforcementStrategy(NaviStrategy):
-    def __init__(self, goal, model, tolerance, idle_t, cheater = False):
+    def __init__(self, goal, model, tolerance, idle_t):
         # Deep-Q network
         self.model = model
         self.last_reward = 0
         self.idle_t = idle_t
         self.dynamic_reward = True
-        self.cheater = cheater
-        # self.offset = randint(0,3)
         NaviStrategy.__init__(self, goal, tolerance)
 
-    def plan_movement(self, e = 0.05, position = None, cheat = None):
+    def plan_movement(self, e = 0.05, position = None):
         d = np.random.random()
-        if cheat == None:
-            cheat = self.cheater
         # explore 5% of the time
         if d < e:
-            if (d < e/2) and (cheat == True):
-                choice = NaviStrategy.plan_movement(self)
-            else:
-                choice = randint(0, 4)
+            choice = randint(0, 4)
         # exploit current Q-function
         else:
-            _, quality = self.get_quality(mode = 0)
-            c = np.argmax(quality)# + self.offset) % 4
-            if c == 5:
-                choice = NaviStrategy.plan_movement(self)
-            else:
-                choice = c
+            _, quality = self.get_quality(mode = 2)
+            choice = np.argmax(quality)
         return choice
 
     def get_quality(self, mode = 0):
@@ -101,29 +89,14 @@ class ReinforcementStrategy(NaviStrategy):
             colormask = np.vectorize(color)
             ipt = colormask(s)
             n = self.board.width * self.board.height
-        # combined input mode
-        elif mode == 3:
-            ipt, _ = self.get_input()
-            cells = self.board.cells
-            flatten = lambda l: [item for sublist in l for item in sublist]
-            cells = flatten(cells)
-            color = lambda i: 0 if i == None else i.color
-            colormask = [color(i) for i in cells]
-            ipt.extend(colormask)
-            n = 4 + (self.board.width * self.board.height)
-        if mode == 2:
-            ipt = np.array(ipt)
-        else:
-            ipt = np.array(ipt).reshape(1, n)
+        ipt = np.array(ipt).reshape(1, n)
         quality = self.model.predict(ipt)
         return ipt, quality
 
-    def get_reward(self, step = -1, goal = 1):
+    def get_reward(self, step = -3, goal = 5):
         if self.dynamic_reward == True:
             distance = self.get_distance(self.figure.position(), self.goal)
-            distance = np.min([distance, 2*self.tolerance])
-            reward = goal * (1 - ((distance - 1)/self.tolerance))
-            # now the reward is in the range (-goal, goal)
+            reward = step + goal * 1/np.min([distance, self.tolerance])
         else:
             if self.at_goal > self.idle_t:
                 reward = goal
@@ -145,27 +118,46 @@ class ReinforcementStrategy(NaviStrategy):
         except:
             self.shift()
 
-def baseline_model(optimizer = Adam(lr = 0.00001),
-                    layers = [{"size":20,"activation":"relu"}],
-                    ipt_mode = 0, opt_mode = 0):
+# Hybrid learning game
+class HybridNaviGame(ReinforcementNaviGame):
+    # def __init__(self, height, width, model, tolerance = 2, goal_idle = 1):
+    #     ReinforcementNaviGame.__init__(self, height, width, model,
+    #                     tolerance = tolerance,
+    #                     goal_idle = goal_idle)
+
+    def setup(self):
+        ReinforcementNaviGame.setup(self)
+        self.strategy = HybridStrategy(
+                            goal = self.goal,
+                            model = self.model,
+                            tolerance = self.tolerance,
+                            idle_t = self.goal_idle)
+        self.Navigator.bindStrategy(self.strategy)
+
+# Hybrid Learning strategy - experimental
+class HybridStrategy(ReinforcementStrategy):
+    def plan_movement(self, e = 0.01, position = None):
+        d = np.random.random()
+        # explore/learn e% of the time
+        if d < e:
+            if d < e/2:
+                choice = randint(0, 4)
+            else:
+                choice = NaviStrategy.plan_movement(self)
+        # exploit current Q-function
+        else:
+            _, quality = self.get_quality(mode = 2)
+            choice = np.argmax(quality)
+        return choice
+
+def baseline_model(optimizer = sgd(lr = 0.001),
+                    layers = [{"size":20,"activation":"relu"}]):
     # four inputs - each coordinate when we move the goal
     # two inputs for now, until it's doing reallly good at fixed goals
     # and now 81 inputs, for a pixel value test!
-    # now we get 1204 - 1200 pixels for a 40x30 board, plus 4 inputs
-    if ipt_mode == 0:
-        inputs = 2
-    elif ipt_mode == 1:
-        inputs = 4
-    elif ipt_mode == 2:
-        inputs = (40, 30)
-    elif ipt_mode == 3:
-        inputs = 1204
-    # inputs = 1204
-    # six outputs - one for each action, and one to use det strategy
-    if opt_mode == 1:
-        num_outputs = 6
-    else:
-        num_outputs = 5
+    inputs = 81
+    # five outputs - one for each action
+    num_outputs = 5
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -173,23 +165,20 @@ def baseline_model(optimizer = Adam(lr = 0.00001),
     l0 = l[0]
     del l[0]
     model.add(Dense(l0['size'],
-                input_dim = inputs,
-                activation = l0['activation']))
-    # add convolutions if mode == 2
-    if ipt_mode == 2:
-        model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-        model.add(Activation('relu'))
+                    input_dim = inputs,
+                    activation = l0['activation']))
     # the hidden layers
     for layer in l:
         model.add(Dense(layer['size'], activation=layer['activation']))
     # the output layer
-    model.add(Dense(num_outputs, activation='tanh'))
+    model.add(Dense(num_outputs, activation='linear'))
     model.compile(optimizer = optimizer,
                     loss = "mean_squared_error")
     return model
 
-def train_model(game, model, mode = 0, episodes = 10, steps = 2):
-    initial_e, final_e = 1, 0
+def train_model(game, model, episodes = 10, steps = 2,
+                            e_start = 1, e_stop = 0):
+    initial_e, final_e = e_start, e_stop
     # use 1 until we add stochasticity to the model
     gamma = 1
     e_delta = initial_e - final_e / episodes
@@ -207,8 +196,8 @@ def train_model(game, model, mode = 0, episodes = 10, steps = 2):
             # feedforward pass which defines the next state
             # note that the e is an epsilon-greedy value,
             # which decreases as training carries on
-            choice = game.Navigator.strategy.plan_movement(e, cheat = False)
-            input_i, quality_pred = game.Navigator.strategy.get_quality(mode=0)
+            # choice = game.Navigator.strategy.plan_movement(e)
+            input_i, quality_pred = game.Navigator.strategy.get_quality(mode=2)
             # save network input data from above, which is our <s>
             _, dist = game.Navigator.strategy.get_input()
             distances.append(dist)
@@ -219,12 +208,13 @@ def train_model(game, model, mode = 0, episodes = 10, steps = 2):
             # update our Q[s,a] using the reward we get and
             # the quality prediction for our new state
             reward = game.Navigator.strategy.get_reward()
+            choice = game.Navigator.strategy.last_choice
             quality = reward
             if dist > game.tolerance:
                 quality += gamma * quality_pred.flatten()[choice]
             target_i = quality_pred
             target_i[0][choice] = quality
-            target_i = target_i.reshape(1, 6)
+            target_i = target_i.reshape(1, 5)
             # online learning
             loss = model.train_on_batch(input_i, target_i)
 
@@ -265,106 +255,114 @@ def train_model(game, model, mode = 0, episodes = 10, steps = 2):
     return output
 
 if __name__=='__main__':
-    gs = input("Run grid search?")
-    if gs == 1:
-        training_game_size_x = 40
-        training_game_size_y = 30
-        training_episodes = 100
-        steps = 50
-        final_mean_loss, final_mean_dists, final_mean_reward = [], [], []
-        for neurons in range(60, 81, 10):
-            for layers in [2, 3]:
-                # lets train a DQN model!
-                # make the model
-                layer = {"size":neurons,"activation":"relu"}
-                hiddens = [layer for i in range(layers)]    # make an optimizer
-                from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
-                # note to self: DON'T CHANGE THIS UNTIL YOU KNOW WE'RE LEARNING SOMETHING
-                # optimizer = sgd(lr = 0.0001)
-                # optimizer_str = "SGD"
-                optimizer = Adagrad()
-                optimizer_str = "Adagrad"
-                # optimizer = RMSprop()
-                # optimizer_str = "RMSprop"
-                # optimizer = Adadelta()
-                # optimizer_str = "Adadelta"
-                # optimizer = Adam()
-                # optimizer_str = "Adam"
-                model = baseline_model(optimizer, hiddens)
-                # prepare the game for training model
-                training_game = ReinforcementNaviGame(training_game_size_y,
-                                                training_game_size_x,
-                                                model)
-                training_game.setup()
+    # import theano
+    # theano.config.device = 'gpu'
+    # theano.config.floatX = 'float32'
+    # debug = int(input("Debug? (0/1): "))
+    # if debug == 1:
+    #     pdb.set_trace()
+    # training_game_size = int(input("Training game size: "))
+    training_game_size = 9
+    training_episodes = 1000
+    steps = 10
+    final_mean_loss, final_mean_dists, final_mean_reward = [], [], []
+    for neurons in range(60, 120, 10):
+        for layers in [2, 3, 4, 5, 10]:
+            # lets train a DQN model!
+            # make the model
+            layer = {"size":neurons,"activation":"relu"}
+            hiddens = [layer for i in range(layers)]    # make an optimizer
+            from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
+            # note to self: DON'T CHANGE THIS UNTIL YOU KNOW WE'RE LEARNING SOMETHING
+            # optimizer = sgd(lr = 0.0001)
+            # optimizer_str = "SGD"
+            # optimizer = Adagrad()
+            # optimizer_str = "Adagrad"
+            # optimizer = RMSprop()
+            # optimizer_str = "RMSprop"
+            optimizer = Adadelta()
+            optimizer_str = "Adadelta"
+            # optimizer = Adam()
+            # optimizer_str = "Adam"
+            model = baseline_model(optimizer, hiddens)
+            # prepare the game for training model
+            training_game = ReinforcementNaviGame(training_game_size,
+                                            training_game_size,
+                                            model)
+            training_game.setup()
 
-                output = train_model(game = training_game,
-                                model = model,
-                                episodes = training_episodes,
-                                steps = steps)
+            output = train_model(game = training_game,
+                            model = model,
+                            episodes = training_episodes,
+                            steps = steps)
 
-                # plot learning info
-                title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
-                title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
-                title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
-                f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 300)
-                # f.canvas.set_window_title("RL Loss, 100 eps w/ 50 steps, Look: 20")
-                mean_step = 10
+            # plot learning info
+            title_str = str(training_game_size) + "x" + str(training_game_size) + " with "
+            title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
+            title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
+            f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 300)
+            # f.canvas.set_window_title("RL Loss, 100 eps w/ 50 steps, Look: 20")
+            mean_step = 10
+            num_means = int(len(output['distances'])/mean_step/steps)
+
+            for _, k in enumerate([5, 10, 100]):
+                mean_step = k
+                mean_rewards = []
+                mean_dists = []
+                mean_loss = []
                 num_means = int(len(output['distances'])/mean_step/steps)
+                steps_per_mean = steps*mean_step
+                x = np.linspace(0, training_episodes, num_means)
+                for i in range(num_means):
+                    mean_r = 0
+                    mean_d = 0
+                    mean_l = 0
+                    for j in range(steps_per_mean):
+                        mean_r += output['rewards'][j + i * steps_per_mean]
+                        mean_d += output['distances'][j + i * steps_per_mean]
+                        mean_l += output['loss'][j + i * steps_per_mean]
+                    mean_r = mean_r / steps_per_mean
+                    mean_d = mean_d / steps_per_mean
+                    mean_l = mean_l / steps_per_mean
+                    mean_rewards.append(mean_r)
+                    mean_dists.append(mean_d)
+                    mean_loss.append(mean_l)
+                label = str(mean_step) + " Episodes"
+                axarr[0].plot(x, mean_loss, label = label)
+                axarr[1].plot(x, mean_dists, label = label)
+                axarr[2].plot(x, mean_rewards, label = label)
 
-                for _, k in enumerate([1, 5]):
-                    mean_step = k
-                    mean_rewards = []
-                    mean_dists = []
-                    mean_loss = []
-                    num_means = int(len(output['distances'])/mean_step/steps)
-                    steps_per_mean = steps*mean_step
-                    x = np.linspace(0, training_episodes, num_means)
-                    for i in range(num_means):
-                        mean_r = 0
-                        mean_d = 0
-                        mean_l = 0
-                        for j in range(steps_per_mean):
-                            mean_r += output['rewards'][j + i * steps_per_mean]
-                            mean_d += output['distances'][j + i * steps_per_mean]
-                            mean_l += output['loss'][j + i * steps_per_mean]
-                        mean_r = mean_r / steps_per_mean
-                        mean_d = mean_d / steps_per_mean
-                        mean_l = mean_l / steps_per_mean
-                        mean_rewards.append(mean_r)
-                        mean_dists.append(mean_d)
-                        mean_loss.append(mean_l)
-                    label = str(mean_step) + " Episodes"
-                    axarr[0].plot(x, mean_loss, label = label)
-                    axarr[1].plot(x, mean_dists, label = label)
-                    axarr[2].plot(x, mean_rewards, label = label)
+            axarr[0].grid(True)
+            axarr[0].set_title(title_str + 'Mean Loss')
+            axarr[1].grid(True)
+            axarr[1].set_title('Mean Distances from Goal')
+            axarr[2].grid(True)
+            axarr[2].set_title('Mean Rewards')
+            f.subplots_adjust(hspace=0.2)
 
-                axarr[0].grid(True)
-                axarr[0].set_title(title_str + 'Mean Loss')
-                axarr[1].grid(True)
-                axarr[1].set_title('Mean Distances from Goal')
-                axarr[2].grid(True)
-                axarr[2].set_title('Mean Rewards')
-                f.subplots_adjust(hspace=0.2)
+            # axarr[1].plot(x, output['replays'])
+            # axarr[1].set_title('Replay Loss')
+            # axarr[2].plot(x2, output['reward_totals'])
+            # axarr[2].set_title('Total Reward')
+            # axarr[2].plot(x2, output['distances'])
+            # axarr[2].set_title('Distance from Goal')
 
-                file_str = str(training_game_size_y) + "x" + str(training_game_size_x) + "_"
-                file_str += str(training_episodes) + "_" + str(steps) + "_" + str(len(hiddens))
-                file_str += "_" + str(neurons) + "_neurons_"+ optimizer_str
-                pl.legend()
-                pl.plot()
-                pl.savefig("rl_plots" + file_str + ".png")
-                pl.close()
-                final_mean_reward.append(mean_rewards.pop())
-                final_mean_dists.append(mean_dists.pop())
-                final_mean_loss.append(mean_loss.pop())
-            # pl.show()
-        f, axarr = pl.subplots(1, 1, figsize = (10, 5), dpi = 300)
-        x = np.linspace(0, layers, layers)
-        axarr.plot(x, final_mean_reward, label = "Final mean rewards")
-        axarr.plot(x, final_mean_dists, label = "Final mean distances")
-        axarr.plot(x, final_mean_loss, label = "Final mean loss")
-        axarr.set_title("Network Grid Test")
-        pl.legend()
-        pl.savefig("rl_plots_network_test.png")
-        pl.close()
-    else:
-        pass
+            file_str = str(training_game_size) + "x" + str(training_game_size) + "_"
+            file_str += str(training_episodes) + "_" + str(steps) + "_" + str(len(hiddens))
+            file_str += "_" + str(neurons) + "_neurons_"+ optimizer_str
+            pl.legend()
+            pl.plot()
+            pl.savefig("rl_plots" + file_str + ".png")
+            final_mean_reward.append(mean_rewards.pop())
+            final_mean_dists.append(mean_dists.pop())
+            final_mean_loss.append(mean_loss.pop())
+        # pl.show()
+    f, axarr = pl.subplots(1, 1, figsize = (10, 5), dpi = 300)
+    x = np.linspace(0, layers, layers)
+    axarr.plot(x, final_mean_reward, label = "Final mean rewards")
+    axarr.plot(x, final_mean_dists, label = "Final mean distances")
+    axarr.plot(x, final_mean_loss, label = "Final mean loss")
+    axarr.set_title("Network Grid Test")
+    pl.legend()
+    pl.savefig("rl_plots_network_test.png")
+    pl.close()
