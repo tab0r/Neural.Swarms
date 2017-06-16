@@ -61,6 +61,7 @@ class ReinforcementStrategy(NaviStrategy):
         self.idle_t = idle_t
         self.dynamic_reward = True
         self.mode = 0
+        self.last_choice = 4
         NaviStrategy.__init__(self, goal, tolerance)
 
     def plan_movement(self, e = 0.05, position = None):
