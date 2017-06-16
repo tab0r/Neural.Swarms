@@ -449,7 +449,7 @@ if __name__=='__main__':
     title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
     f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 300)
 
-    base = int(episodes/100.0)
+    base = int(training_episodes/100.0)
     for _, k in enumerate([base, 5*base, 25*base]):
         mean_step = k
         mean_rewards = []
