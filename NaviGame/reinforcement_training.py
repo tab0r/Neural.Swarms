@@ -60,6 +60,7 @@ class ReinforcementStrategy(NaviStrategy):
         self.last_reward = 0
         self.idle_t = idle_t
         self.dynamic_reward = True
+        self.mode = 0
         NaviStrategy.__init__(self, goal, tolerance)
 
     def plan_movement(self, e = 0.05, position = None):
@@ -73,7 +74,9 @@ class ReinforcementStrategy(NaviStrategy):
             choice = np.argmax(quality)
         return choice
 
-    def get_quality(self, mode = 0):
+    def get_quality(self, mode = None):
+        if mode == None:
+            mode = self.mode
         # fixed goal mode
         if mode == 0:
             ipt = list(self.figure.position())
@@ -89,14 +92,29 @@ class ReinforcementStrategy(NaviStrategy):
             colormask = np.vectorize(color)
             ipt = colormask(s)
             n = self.board.width * self.board.height
-        ipt = np.array(ipt).reshape(1, n)
+        # combined input mode
+        elif mode == 3:
+            ipt, _ = self.get_input()
+            cells = self.board.cells
+            flatten = lambda l: [item for sublist in l for item in sublist]
+            cells = flatten(cells)
+            color = lambda i: 0 if i == None else i.color
+            colormask = [color(i) for i in cells]
+            ipt.extend(colormask)
+            n = 4 + (self.board.width * self.board.height)
+        if mode == 2:
+            ipt = np.array(ipt)
+        else:
+            ipt = np.array(ipt).reshape(1, n)
         quality = self.model.predict(ipt)
         return ipt, quality
 
-    def get_reward(self, step = -3, goal = 5):
+    def get_reward(self, step = -1, goal = 1):
         if self.dynamic_reward == True:
             distance = self.get_distance(self.figure.position(), self.goal)
-            reward = step + goal * 1/np.min([distance, self.tolerance])
+            distance = np.min([distance, 2*self.tolerance])
+            reward = goal * (1 - ((distance - 1)/self.tolerance))
+            # now the reward is in the range (-goal, goal)
         else:
             if self.at_goal > self.idle_t:
                 reward = goal
@@ -119,11 +137,6 @@ class ReinforcementStrategy(NaviStrategy):
             self.shift()
 
 class HybridNaviGame(ReinforcementNaviGame):
-    # def __init__(self, height, width, model, tolerance = 2, goal_idle = 1):
-    #     ReinforcementNaviGame.__init__(self, height, width, model,
-    #                     tolerance = tolerance,
-    #                     goal_idle = goal_idle)
-
     def setup(self):
         ReinforcementNaviGame.setup(self)
         self.strategy = HybridStrategy(
@@ -145,18 +158,31 @@ class HybridStrategy(ReinforcementStrategy):
                 choice = NaviStrategy.plan_movement(self)
         # exploit current Q-function
         else:
-            _, quality = self.get_quality(mode = 2)
+            _, quality = self.get_quality()
             choice = np.argmax(quality)
         return choice
 
-def baseline_model(optimizer = sgd(lr = 0.001),
-                    layers = [{"size":20,"activation":"relu"}]):
+def baseline_model(optimizer = Adam(lr = 0.00001),
+                    layers = [{"size":20,"activation":"relu"}],
+                    ipt_mode = 0, opt_mode = 0):
     # four inputs - each coordinate when we move the goal
     # two inputs for now, until it's doing reallly good at fixed goals
     # and now 81 inputs, for a pixel value test!
-    inputs = 81
-    # five outputs - one for each action
-    num_outputs = 5
+    # now we get 1204 - 1200 pixels for a 40x30 board, plus 4 inputs
+    if ipt_mode == 0:
+        inputs = 2
+    elif ipt_mode == 1:
+        inputs = 4
+    elif ipt_mode == 2:
+        inputs = (40, 30)
+    elif ipt_mode == 3:
+        inputs = 1204
+    # inputs = 1204
+    # six outputs - one for each action, and one to use det strategy
+    if opt_mode == 1:
+        num_outputs = 6
+    else:
+        num_outputs = 5
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -164,13 +190,17 @@ def baseline_model(optimizer = sgd(lr = 0.001),
     l0 = l[0]
     del l[0]
     model.add(Dense(l0['size'],
-                    input_dim = inputs,
-                    activation = l0['activation']))
+                input_dim = inputs,
+                activation = l0['activation']))
+    # add convolutions if mode == 2
+    if ipt_mode == 2:
+        model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
+        model.add(Activation('relu'))
     # the hidden layers
     for layer in l:
         model.add(Dense(layer['size'], activation=layer['activation']))
     # the output layer
-    model.add(Dense(num_outputs, activation='linear'))
+    model.add(Dense(num_outputs, activation='tanh'))
     model.compile(optimizer = optimizer,
                     loss = "mean_squared_error")
     return model
@@ -196,7 +226,7 @@ def train_model(game, model, episodes = 10, steps = 2,
             # note that the e is an epsilon-greedy value,
             # which decreases as training carries on
             # choice = game.Navigator.strategy.plan_movement(e)
-            input_i, quality_pred = game.Navigator.strategy.get_quality(mode=2)
+            input_i, quality_pred = game.Navigator.strategy.get_quality()
             # save network input data from above, which is our <s>
             _, dist = game.Navigator.strategy.get_input()
             distances.append(dist)
