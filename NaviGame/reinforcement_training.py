@@ -397,7 +397,7 @@ if __name__=='__main__':
     # make the model
     print("If you are running this on a machine with GPU, and didn't use flags, abort now and restart with: \n")
     print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py")
-    
+
     hiddens = [{"size":100,"activation":"relu"},
                {"size":20,"activation":"relu"}]
     #            {"size":100,"activation":"relu"},
@@ -415,8 +415,8 @@ if __name__=='__main__':
     # optimizer_str = "Adadelta"
     optimizer = Adam()
     optimizer_str = "Adam"
-    # model = baseline_model(optimizer, hiddens, ipt_mode = 3, opt_mode = 1)
-    model = load_model("guided_rl_model_wide.h5")
+    model = baseline_model(optimizer, hiddens, ipt_mode = 3, opt_mode = 1)
+    # model = load_model("guided_rl_model_wide.h5")
 
     training_game_size_x = 40
     training_game_size_y = 30
