@@ -18,7 +18,7 @@ from navi_game import *
 
 # imports for neural net
 from keras.utils import np_utils
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers.core import Dense
 from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
 import theano
@@ -160,6 +160,8 @@ class HybridStrategy(ReinforcementStrategy):
         else:
             _, quality = self.get_quality()
             choice = np.argmax(quality)
+            if choice == 5:
+                choice = NaviStrategy.plan_movement(self)
         return choice
 
 def baseline_model(optimizer = Adam(lr = 0.00001),
@@ -242,8 +244,9 @@ def train_model(game, model, episodes = 10, steps = 2,
             if dist > game.tolerance:
                 quality += gamma * quality_pred.flatten()[choice]
             target_i = quality_pred
+            n = len(quality_pred.flatten())
             target_i[0][choice] = quality
-            target_i = target_i.reshape(1, 5)
+            target_i = target_i.reshape(1, n)
             # online learning
             loss = model.train_on_batch(input_i, target_i)
 
@@ -283,14 +286,7 @@ def train_model(game, model, episodes = 10, steps = 2,
     output['rewards'] = rewards
     return output
 
-if __name__=='__main__':
-    # import theano
-    # theano.config.device = 'gpu'
-    # theano.config.floatX = 'float32'
-    # debug = int(input("Debug? (0/1): "))
-    # if debug == 1:
-    #     pdb.set_trace()
-    # training_game_size = int(input("Training game size: "))
+def grid_search_sketch():
     training_game_size = 9
     training_episodes = 1000
     steps = 10
@@ -395,3 +391,99 @@ if __name__=='__main__':
     pl.legend()
     pl.savefig("rl_plots_network_test.png")
     pl.close()
+
+if __name__=='__main__':
+    # lets train a DQN model!
+    # make the model
+    hiddens = [{"size":100,"activation":"relu"},
+               {"size":20,"activation":"relu"}]
+    #            {"size":100,"activation":"relu"},
+    #           {"size":100,"activation":"relu"}]
+    # make an optimizer
+    from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
+    # note to self: DON'T CHANGE THIS UNTIL YOU KNOW WE'RE LEARNING SOMETHING
+    # optimizer = sgd(lr = 0.0001)
+    # optimizer_str = "SGD"
+    # optimizer = Adagrad()
+    # optimizer_str = "Adagrad"
+    # optimizer = RMSprop()
+    # optimizer_str = "RMSprop"
+    # optimizer = Adadelta()
+    # optimizer_str = "Adadelta"
+    optimizer = Adam()
+    optimizer_str = "Adam"
+    # model = baseline_model(optimizer, hiddens, ipt_mode = 3, opt_mode = 1)
+    model = load_model("guided_rl_model_wide.h5")
+
+    training_game_size_x = 40
+    training_game_size_y = 30
+
+    training_game = HybridNaviGame(training_game_size_y,
+                                    training_game_size_x,
+                                    model,
+                                    tolerance = 5)
+    training_game.setup()
+    training_game.Navigator.strategy.mode = 3
+
+    training_episodes = int(input("How many episodes?\n"))
+    steps = int(input("How many steps per episode?\n"))
+    print("Ready to beging training")
+    _ = input("Press enter to begin")
+    # train the model
+    output = train_model(game = training_game,
+                    model = model,
+                    episodes = training_episodes,
+                    steps = steps,
+                    e_start = .9,
+                    e_stop = .1)
+
+    print("Saving trained model...")
+    model.save("guided_rl_model_wide.h5")
+    # plot learning info
+    title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
+    title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
+    title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
+    f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 300)
+
+    base = int(episodes/100.0)
+    for _, k in enumerate([base, 5*base, 25*base]):
+        mean_step = k
+        mean_rewards = []
+        mean_dists = []
+        mean_loss = []
+        num_means = int(len(output['distances'])/mean_step/steps)
+        steps_per_mean = steps*mean_step
+        x = np.linspace(0, training_episodes, num_means)
+        for i in range(num_means):
+            mean_r = 0
+            mean_d = 0
+            mean_l = 0
+            for j in range(steps_per_mean):
+                mean_r += output['rewards'][j + i * steps_per_mean]
+                mean_d += output['distances'][j + i * steps_per_mean]
+                mean_l += output['loss'][j + i * steps_per_mean]
+            mean_r = mean_r / steps_per_mean
+            mean_d = mean_d / steps_per_mean
+            mean_l = mean_l / steps_per_mean
+            mean_rewards.append(mean_r)
+            mean_dists.append(mean_d)
+            mean_loss.append(mean_l)
+        label = str(mean_step) + " Episodes"
+        axarr[0].plot(x, mean_loss, label = label)
+        axarr[1].plot(x, mean_dists, label = label)
+        axarr[2].plot(x, mean_rewards, label = label)
+
+    axarr[0].grid(True)
+    axarr[0].set_title(title_str + 'Mean Loss')
+    axarr[1].grid(True)
+    axarr[1].set_title('Mean Distances from Goal')
+    axarr[2].grid(True)
+    axarr[2].set_title('Mean Rewards')
+    f.subplots_adjust(hspace=0.2)
+
+    file_str = str(training_game_size_y) + "x" + str(training_game_size_x) + "_"
+    file_str += str(training_episodes) + "_" + str(steps) + "_" + str(len(hiddens))
+    file_str += "_" + optimizer_str
+    pl.legend()
+    pl.plot()
+    pl.savefig("hybrid_plots" + file_str + "_2.png")
