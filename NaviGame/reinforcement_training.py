@@ -395,6 +395,9 @@ def grid_search_sketch():
 if __name__=='__main__':
     # lets train a DQN model!
     # make the model
+    print("If you are running this on a machine with GPU, and didn't use flags, abort now and restart with: \n")
+    print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py")
+    
     hiddens = [{"size":100,"activation":"relu"},
                {"size":20,"activation":"relu"}]
     #            {"size":100,"activation":"relu"},
