@@ -441,15 +441,13 @@ if __name__=='__main__':
                     e_start = .9,
                     e_stop = .1)
 
-    print("Saving trained model...")
-    model.save("guided_rl_model_wide.h5")
     # plot learning info
     title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
     title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
     title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
-    f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 300)
+    f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 600)
 
-    base = int(training_episodes/100.0)
+    base = int(training_episodes/1000)
     for _, k in enumerate([base, 5*base, 25*base]):
         mean_step = k
         mean_rewards = []
@@ -490,4 +488,8 @@ if __name__=='__main__':
     file_str += "_" + optimizer_str
     pl.legend()
     pl.plot()
-    pl.savefig("hybrid_plots" + file_str + "_2.png")
+    it_str = str(0)
+    print("Saving trained model...")
+    model.save("guided_rl_model_" + file_str + it_str + ".h5")
+    print("Saving training plot")
+    pl.savefig("hybrid_plots" + file_str + it_str + ".png")
