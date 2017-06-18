@@ -399,8 +399,9 @@ if __name__=='__main__':
     print("If you are running this on a machine with GPU, and didn't use flags, abort now and restart with: \n")
     print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py")
 
-    hiddens = [{"size":100,"activation":"relu"},
-               {"size":20,"activation":"relu"}]
+    neurons = int(input("How many hidden layer neurons?\n"))
+    hiddens = [{"size":neurons,"activation":"relu"}]
+            #    {"size":20,"activation":"relu"}]
     #            {"size":100,"activation":"relu"},
     #           {"size":100,"activation":"relu"}]
     # make an optimizer
@@ -444,8 +445,9 @@ if __name__=='__main__':
     # plot learning info
     title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
     title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
-    title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
-    f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 600)
+    # title_str += str(len(hiddens)) + " hidden layers, optimized with " +
+    title_str += str(neurons) + " neurons in hidden layer, optimized with " + optimizer_str + "\n"
+    f, axarr = pl.subplots(3, 1, figsize = (8, 10.5), dpi = 600)
 
     base = int(training_episodes/1000)
     for _, k in enumerate([base, 5*base, 25*base]):
@@ -484,7 +486,8 @@ if __name__=='__main__':
     f.subplots_adjust(hspace=0.2)
 
     file_str = str(training_game_size_y) + "x" + str(training_game_size_x) + "_"
-    file_str += str(training_episodes) + "_" + str(steps) + "_" + str(len(hiddens))
+    file_str += str(training_episodes) + "_" + str(steps) + "_" + str(neurons)
+    #  str(len(hiddens))
     file_str += "_" + optimizer_str
     pl.legend()
     pl.plot()
