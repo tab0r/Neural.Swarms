@@ -393,6 +393,116 @@ def grid_search_sketch():
     pl.savefig("rl_plots_network_test.png")
     pl.close()
 
+def plot_learning_info(output, game, training_episodes = 10000, steps = 10, title_str = None, file_str = None):
+    # plot learning info
+    training_game_size_y = game.board.height
+    training_game_size_x = game.board.width
+    steps = len(output['distances'])
+    if title_str == None:
+        title_str = "Learning Plots\n"
+    f, axarr = pl.subplots(3, 1, figsize = (8, 10.5), dpi = 600)
+
+    for n in [1000, 5000, 25000]:
+        mean_step = n
+        mean_rewards = []
+        mean_dists = []
+        mean_loss = []
+        num_means = int(len(output['distances'])/mean_step/steps)
+        steps_per_mean = steps*mean_step
+        x = np.linspace(0, training_episodes, num_means)
+        for i in range(num_means):
+            mean_r = 0
+            mean_d = 0
+            mean_l = 0
+            for j in range(steps_per_mean):
+                mean_r += output['rewards'][j + i * steps_per_mean]
+                mean_d += output['distances'][j + i * steps_per_mean]
+                mean_l += output['loss'][j + i * steps_per_mean]
+            mean_r = mean_r / steps_per_mean
+            mean_d = mean_d / steps_per_mean
+            mean_l = mean_l / steps_per_mean
+            mean_rewards.append(mean_r)
+            mean_dists.append(mean_d)
+            mean_loss.append(mean_l)
+        label = str(mean_step) + " Episodes"
+        axarr[0].plot(x, mean_loss, label = label)
+        axarr[1].plot(x, mean_dists, label = label)
+        axarr[2].plot(x, mean_rewards, label = label)
+
+    axarr[0].grid(True)
+    axarr[0].set_title(title_str + 'Mean Loss')
+    axarr[1].grid(True)
+    axarr[1].set_title('Mean Distances from Goal')
+    axarr[2].grid(True)
+    axarr[2].set_title('Mean Rewards')
+    f.subplots_adjust(hspace=0.2)
+
+    if file_str == None:
+        file_str = str(training_game_size_y) + "x" + str(training_game_size_x)
+        file_str += "_" + str(training_episodes) + ".png"
+    pl.legend()
+    pl.plot()
+    pl.savefig(file_str)
+    pl.show()
+
+def train_with_blocks(model, episodes, steps, gamecount, blockcount):
+    training_game_size_x = 40
+    training_game_size_y = 30
+    episodes_per_game = int(episodes/gamecount)
+    outputs = []
+    for i in range(gamecount):
+        game = HybridNaviGame(training_game_size_y,
+                                training_game_size_x,
+                                model,
+                                tolerance = 3)
+        game.setup()
+        game.Navigator.strategy.mode = 3
+        blocks = []
+        for _ in range(blockcount):
+            blocks.append(game.add_block())
+        outputs.append(train_model(game = game,
+                model = model,
+                episodes = episodes_per_game,
+                steps = steps,
+                e_start = .9,
+                e_stop = .1))
+        draw_game(game, save = True, filename = "training_game" + str(i) + ".png")
+        del game
+        model.save("block_training_backup.h5")
+    return outputs
+
+def train_with_channel(model, episodes, steps, gamecount):
+    training_game_size_x = 40
+    training_game_size_y = 30
+    episodes_per_game = int(episodes/gamecount)
+    outputs = []
+    for i in range(gamecount):
+        game = HybridNaviGame(training_game_size_y,
+                                training_game_size_x,
+                                model,
+                                tolerance = 3)
+        game.setup()
+        game.Navigator.strategy.mode = 3
+        length = randint(8, 14) * 2
+        width = randint(1, 5) * 2
+        step_1 = (1, 0)
+        start_1 = (15 - int(0.5*length), 20 - int(0.5*width))
+        start_2 = (15 - int(0.5*length), 20 + int(0.5*width))
+        # ish
+        game.add_wall(length = length, start = start_1, step = step_1)
+        game.add_wall(length = length, start = start_2, step = step_1)
+
+        outputs.append(train_model(game = game,
+                model = model,
+                episodes = episodes_per_game,
+                steps = steps,
+                e_start = .9,
+                e_stop = .1))
+        draw_game(game, save = True, filename = "training_game" + str(i) + ".png")
+        del game
+        model.save("wall_training_backup.h5")
+    return outputs
+
 if __name__=='__main__':
     # lets train a DQN model!
     # make the model
