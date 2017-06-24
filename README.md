@@ -17,15 +17,6 @@ The program uses python, jupyter, and keras with a theano back end. It will run 
 
 It's coded with Python 3.6 on Mac OS X.
 
-# References
-
-- Excellent materials in Georgia Tech's [Reinforcement Learning](https://www.udacity.com/course/reinforcement-learning--ud600) course on Udacity.
-- Referencing Karpathy's blog in two places:
-    - [Keras Plays Catch](https://edersantana.github.io/articles/keras_rl/)
-    - [Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
-- Nervanasys blog post (linked in Karpathy):
-    - [Deep Reinforcement Learning](https://www.nervanasys.com/demystifying-deep-reinforcement-learning/)
-
 # Agents, Environments, and Reinforcement Learning
 
 - **Agents**, in the context of machine learning, are a class of algorithms which make choices once deployed. These include everything from humble vacuum cleaners to stock-picking algorithms.
@@ -52,8 +43,13 @@ Reinforcement learning allows the agent to explore strategies on its own, and by
 | --- | --- | --- |
 | ![RL1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/three_stages_rl/trained_guided_rl_1.gif) | ![RL2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/three_stages_rl/trained_guided_rl_2.gif) | ![RL3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/three_stages_rl/trained_guided_rl_3.gif) |
 
-Above we see the progression of the agents learning. In the first, it had seen about 50,000 game steps. The next was an additional 500,000, and the final saw  another 1,000,000 steps. By contrast, the supervised learner above only required about 10,000 steps to achieve nearly-perfect imitation of the deterministic strategy. So why bother with reinforcement learning? I discuss below. First, here are some very noisy charts from the middle and right hand training cycles.
+Above we see the progression of the agents learning. In the first, it had seen about 50,000 game steps. The next was an additional 500,000, and the final saw  another 1,000,000 steps. By contrast, the supervised learner above only required about 10,000 steps to achieve nearly-perfect imitation of the deterministic strategy. So why bother with reinforcement learning? I'll discuss once I have a chance to fully update this readme!
 
-| 500,000 steps | Another 1,000,000! |
-| --- | --- |
-| ![RL1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/images/rl_plots9x9_500000_2_4_Adam.png) | ![RL2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/images/rl_plots9x9_1000000_3_4_Adam.png) |
+# References
+
+- ![Playing Atari with Deep Reinforcement Learning](https://arxiv.org/abs/1312.5602)
+- Excellent materials in Georgia Tech's [Reinforcement Learning](https://www.udacity.com/course/reinforcement-learning--ud600) course on Udacity.
+- [Keras Plays Catch](https://edersantana.github.io/articles/keras_rl/)
+- [Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
+- Nervanasys blog post (linked in Karpathy):
+    - [Deep Reinforcement Learning](https://www.nervanasys.com/demystifying-deep-reinforcement-learning/)
