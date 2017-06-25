@@ -1,5 +1,5 @@
 # Neural.Swarms
-Python swarm simulation with neural net based agents. Mainly focused on the NaviGame in my fork of [Python.Swarms](https://github.com/thetabor/Python.Swarms/), but the way I extend the game to allow a neural net is applicable to all of the games. Note that you will either need my fork or [the original](https://github.com/elmar-hinz/Python.Swarms/), with the files in ```Python.Swarms resources```. I am exploring both supervised and reinforcement learning for the agent. For a nice visual display, see:
+Python swarm simulation with neural net based agents. Mainly focused on the NaviGame in my fork of [Python.Swarms](https://github.com/thetabor/Python.Swarms/), but the way I extend the game to allow a neural net is applicable to all of the games. You will need that repo, so clone it down before continuing. I am exploring both supervised and reinforcement learning for the agent. For a nice visual display, see:
 
 ```
 /NaviGame/Reinforcement Model Training.ipynb
