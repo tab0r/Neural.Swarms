@@ -1,4 +1,4 @@
-# Neural.Swarms
+N# Neural.Swarms
 Python swarm simulation with neural net based agents. Mainly focused on the NaviGame in my fork of [Python.Swarms](https://github.com/thetabor/Python.Swarms/), but the way I extend the game to allow a neural net is applicable to all of the games. You will need that repo, so clone it down before continuing. I am exploring both supervised and reinforcement learning for the agent. For a nice visual display, see:
 
 ```
@@ -49,7 +49,7 @@ Here we see how quickly the supervised learner can perform well on the simple ta
 
 | Deterministic Strategy | Almost trained supervised model | Trained supervised |
 | --- | --- | --- |
-| ![Deterministic](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/deterministic_strategy_test.gif) | ![Almost trained](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/supervised/slight_undertrained_supervised.gif) | ![Fully trained](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/supervised/trained_supervised.gif) |
+| ![Deterministic](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/deterministic_strategy_test.gif) | ![Almost trained](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/supervised/slight_undertrained_supervised.gif) | ![Fully trained](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/supervised/trained_supervised.gif) |
 
 The supervised network learns from the deterministic strategy on the left, and eventually learns to mimic it perfectly.
 
