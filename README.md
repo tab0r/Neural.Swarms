@@ -65,7 +65,7 @@ With all this in mind, I built a new model. This model takes inputs as usual, th
 
 | Break In | More Training | Trained with harder game | Non-optimal paths |
 | --- | --- | --- | --- |
-| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_00_20000x15.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_01_plus60000x5_a.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_09_plus_3x_60000x5_b.gif) |
+| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_00_20000x15.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_01_plus60000x5_a.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_09_plus_3x_60000x5_d.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_09_plus_3x_60000x5_b.gif) |
 
 All this progress made me wonder if Larry could handle a challenge...
 
