@@ -67,7 +67,7 @@ With all this in mind, I built a new model. This model takes inputs as usual, th
 | --- | --- | --- | --- | --- |
 | ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/01_break_in.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/02_more_training.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/03_harder_game.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/04_non_optimal.gif) | ![img5](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/05_run_away.gif) |
 
-To conclude, reinforcement learning clearly works, and leaves flexibility to function of new challenges. I've built new training systems for training with a variety of obstacles.
+To conclude, reinforcement learning clearly works, and leaves flexibility to function of new challenges. I've built new training systems for training with a variety of obstacles. I'm currently in the processes of documenting the code here and in my Sphero DQN project, and will continue testing models once that's finished.
 
 # References
 
