@@ -63,15 +63,10 @@ When the DQN agent is initialized, it's output values are effectively random num
 
 With all this in mind, I built a new model. This model takes inputs as usual, the whole game screen. As outputs, it has the five usual outputs; up, down, left, right and stay, plus a new addition: use the deterministic strategy. So, for the simple games, all our DQN agent has to do is learn to always use the deterministic strategy. Once it learns this, then we can start exploring more complex problems. Meet Larry, the simple bundle of neurons:
 
-| Break In | More Training | Trained with harder game | Non-optimal paths |
-| --- | --- | --- | --- |
-| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_00_20000x15.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_01_plus60000x5_a.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_09_plus_3x_60000x5_d.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_09_plus_3x_60000x5_b.gif) |
-
-All this progress made me wonder if Larry could handle a challenge...
-
-| And he ran away screaming... | Training hasn't helped yet | Still works on simple games |
-| --- | --- | --- |
-| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_11_plus_3x_60000x5_d.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_12_plus_3x_60000x5_e.gif) | ![Larry3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_14_larry_maze_d.gif)
+| Break In | More Training | Trained with harder game | Non-optimal paths | Doesn't like obstacles |
+| --- | --- | --- | --- | --- |
+| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/01_break_in.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/02_more_training.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/03_harder_game.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/04_non_optimal.gif) |
+![img5](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/05_run_away.gif) |
 
 To conclude, reinforcement learning clearly works, and leaves flexibility to function of new challenges. I've built new training systems for training with a variety of obstacles.
 
