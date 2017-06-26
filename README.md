@@ -25,6 +25,9 @@ If you just want to train models or want to display somehow other than with a ju
 
 - Figure placement can create recursion crashes
 - Not enough comments anywhere
+- Requires jupyter for visualization
+  - Add direct GIF export
+  - Consider potential pygame interfaces
 
 # Initial Goals
 
@@ -62,13 +65,13 @@ With all this in mind, I built a new model. This model takes inputs as usual, th
 
 | Break In | More Training | Trained with harder game | Non-optimal paths |
 | --- | --- | --- | --- |
-| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_00_20000x15.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_01_plus60000x5_a.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_07_plus_2x_60000x5_d.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_09_plus_3x_60000x5_b.gif) |
+| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_00_20000x15.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_01_plus60000x5_a.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_09_plus_3x_60000x5_b.gif) |
 
 All this progress made me wonder if Larry could handle a challenge...
 
 | And he ran away screaming... | Training hasn't helped yet | Still works on simple games |
 | --- | --- | --- |
-| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_11_plus_3x_60000x5_d.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_12_plus_3x_60000x5_e.gif) | ![Larry3](https://github.com/thetabor/Neural.Swarms/blob/master/NaviGame/larry/20000_x_15/larry_gif_14_larry_maze_d.gif)
+| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_11_plus_3x_60000x5_d.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_12_plus_3x_60000x5_e.gif) | ![Larry3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/larry_gif_14_larry_maze_d.gif)
 
 To conclude, reinforcement learning clearly works, and leaves flexibility to function of new challenges. I've built new training systems for training with a variety of obstacles.
 
