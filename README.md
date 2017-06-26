@@ -65,8 +65,7 @@ With all this in mind, I built a new model. This model takes inputs as usual, th
 
 | Break In | More Training | Trained with harder game | Non-optimal paths | Doesn't like obstacles |
 | --- | --- | --- | --- | --- |
-| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/01_break_in.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/02_more_training.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/03_harder_game.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/04_non_optimal.gif) |
-![img5](https://github.com/thetabor/Neural.Swarms/blob/master/notes/gifs/larry/05_run_away.gif) |
+| ![Larry1](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/01_break_in.gif) | ![Larry2](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/02_more_training.gif) | ![img3](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/03_harder_game.gif) | ![img4](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/04_non_optimal.gif) | ![img5](https://github.com/thetabor/Neural.Swarms/blob/master/Notes/gifs/larry/05_run_away.gif) |
 
 To conclude, reinforcement learning clearly works, and leaves flexibility to function of new challenges. I've built new training systems for training with a variety of obstacles.
 
@@ -77,5 +76,4 @@ To conclude, reinforcement learning clearly works, and leaves flexibility to fun
 - Excellent materials in Georgia Tech's [Reinforcement Learning](https://www.udacity.com/course/reinforcement-learning--ud600) course on Udacity.
 - [Keras Plays Catch](https://edersantana.github.io/articles/keras_rl/)
 - [Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
-- Nervanasys blog post (linked in Karpathy):
-    - [Deep Reinforcement Learning](https://www.nervanasys.com/demystifying-deep-reinforcement-learning/)
+- [Deep Reinforcement Learning](https://www.nervanasys.com/demystifying-deep-reinforcement-learning/)
