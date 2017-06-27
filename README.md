@@ -1,4 +1,4 @@
-N# Neural.Swarms
+# Neural.Swarms
 Python swarm simulation with neural net based agents. Mainly focused on the NaviGame in my fork of [Python.Swarms](https://github.com/thetabor/Python.Swarms/), but the way I extend the game to allow a neural net is applicable to all of the games. You will need that repo, so clone it down before continuing. I am exploring both supervised and reinforcement learning for the agent. For a nice visual display, see:
 
 ```
@@ -44,7 +44,7 @@ The goals are behavioral in nature, rather than statistic.
 - **Deep-Q Networks** are a way to deploy reinforcement learning to neural networks. The network predicts Q-values for each action the network is allowed. A Q-value is a **quality** of a state, or the expected sum of rewards as we play the game from that state. We (almost) always select the max Q-value we predict.
 - **RL Data:** Initially, the agent has absolutely no knowledge of the environment, so Q-values are effectively random. At each step, it updates the Q-value using the actual reward, plus the Q-value of the next step it plans on taking. So, our model trains on (X, y) data, but each y is actually self-generated and often very inaccurate. But since a part of it is ground truth, the model eventually learns something close enough to real Q-values to function.
 
-# Deterministics and Supervised Examples
+# Deterministic and Supervised Examples
 Here we see how quickly the supervised learner can perform well on the simple task. In contrast, the reinforcement learner struggles to perform well, but it is does show potential. Here are some examples of simulation performance:
 
 | Deterministic Strategy | Almost trained supervised model | Trained supervised |
