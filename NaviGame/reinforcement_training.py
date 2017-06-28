@@ -512,7 +512,7 @@ def train_with_channel(model, episodes, steps, gamecount):
         model.save("wall_training_backup.h5")
     return outputs
 
-# the next training function I write will need to randomly select from a variety of different obstacle situations, and train with them all. 
+# the next training function I write will need to randomly select from a variety of different obstacle situations, and train with them all.     
 
 if __name__=='__main__':
     # lets train a DQN model!
