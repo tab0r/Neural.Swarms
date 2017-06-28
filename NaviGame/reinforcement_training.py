@@ -148,6 +148,7 @@ class HybridNaviGame(ReinforcementNaviGame):
         self.Navigator.bindStrategy(self.strategy)
 
 # Hybrid Learning strategy - experimental
+# works great! Can train a model that handles basic obstacles in 30k steps
 class HybridStrategy(ReinforcementStrategy):
     def plan_movement(self, e = 0.01, position = None):
         d = np.random.random()
@@ -165,6 +166,7 @@ class HybridStrategy(ReinforcementStrategy):
                 choice = NaviStrategy.plan_movement(self)
         return choice
 
+# constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
 def baseline_model(optimizer = Adam(lr = 0.00001),
                     layers = [{"size":20,"activation":"relu"}],
                     ipt_mode = 0, opt_mode = 0):
@@ -208,6 +210,7 @@ def baseline_model(optimizer = Adam(lr = 0.00001),
                     loss = "mean_squared_error")
     return model
 
+# takes a game, a model, number of episodes and steps, and perhaps most importantly, the range for our epsilon-greedy training.
 def train_model(game, model, episodes = 10, steps = 2,
                             e_start = 1, e_stop = 0):
     initial_e, final_e = e_start, e_stop
@@ -287,6 +290,7 @@ def train_model(game, model, episodes = 10, steps = 2,
     output['rewards'] = rewards
     return output
 
+# doesn't work, might not fix. grid search is nonsense in this context. assume you don't need a big network.
 def grid_search_sketch():
     training_game_size = 9
     training_episodes = 1000
@@ -393,6 +397,7 @@ def grid_search_sketch():
     pl.savefig("rl_plots_network_test.png")
     pl.close()
 
+# plots loss, distance from goal, and rewards, meaned over three different intervals of episodes. the mean is necessary as the training is so noisy. i use three different intervals, factors of five apart, as it seemed to yield readable charts. lots of potential for improvement and customization here.
 def plot_learning_info(output, game, training_episodes = 10000, steps = 10, title_str = None, file_str = None):
     # plot learning info
     training_game_size_y = game.board.height
@@ -445,6 +450,9 @@ def plot_learning_info(output, game, training_episodes = 10000, steps = 10, titl
     pl.savefig(file_str)
     pl.show()
 
+# these methods construct new training games, and pass them to train_model with the model you pass in.
+# lots of improvements to be made here... including some I made and accidentally deleted.... so that's a thing.
+# this one places random blocks into the game
 def train_with_blocks(model, episodes, steps, gamecount, blockcount):
     training_game_size_x = 40
     training_game_size_y = 30
@@ -471,6 +479,7 @@ def train_with_blocks(model, episodes, steps, gamecount, blockcount):
         model.save("block_training_backup.h5")
     return outputs
 
+# this one places two walls on either side of the target, with a random length and width
 def train_with_channel(model, episodes, steps, gamecount):
     training_game_size_x = 40
     training_game_size_y = 30
@@ -503,20 +512,23 @@ def train_with_channel(model, episodes, steps, gamecount):
         model.save("wall_training_backup.h5")
     return outputs
 
+# the next training function I write will need to randomly select from a variety of different obstacle situations, and train with them all. 
+
 if __name__=='__main__':
     # lets train a DQN model!
     # make the model
     print("If you are running this on a machine with GPU, and didn't use flags, abort now and restart with: \n")
-    print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py")
-
+    print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py\n")
+    print("But that's kinda a lie, cuz this code is a lil buggy and every time I try to do that on AWS it explodes. I don't own a machine with a GPU, so I've been running it on compute-optimized AWS nodes for long runs. That said, my best models were trained in under 2 hours on a 2016 MacBook.")
+    print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
     neurons = int(input("How many hidden layer neurons?\n"))
     hiddens = [{"size":neurons,"activation":"relu"}]
-            #    {"size":20,"activation":"relu"}]
-    #            {"size":100,"activation":"relu"},
-    #           {"size":100,"activation":"relu"}]
+    # the baseline_model function takes a dictionary of hidden layers,
+    # and sets up your input/output layers for the game
+    # [{"size":100,"activation":"relu"}, {"size":100,"activation":"relu"}]
     # make an optimizer
     from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
-    # note to self: DON'T CHANGE THIS UNTIL YOU KNOW WE'RE LEARNING SOMETHING
+    # note: DON'T CHANGE THIS UNTIL YOU KNOW YOUR MODEL LEARNS SOMETHING
     # optimizer = sgd(lr = 0.0001)
     # optimizer_str = "SGD"
     # optimizer = Adagrad()
@@ -525,11 +537,17 @@ if __name__=='__main__':
     # optimizer_str = "RMSprop"
     # optimizer = Adadelta()
     # optimizer_str = "Adadelta"
+    # seriously, Adam is magical, I don't really understand it but just use it
     optimizer = Adam()
     optimizer_str = "Adam"
+    # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
     model = baseline_model(optimizer, hiddens, ipt_mode = 3, opt_mode = 1)
+    # this probably won't work
     # model = load_model("guided_rl_model_wide.h5")
+    # this probably will work
+    # model.load_weights("your model")
 
+    # set up the training game
     training_game_size_x = 40
     training_game_size_y = 30
 
@@ -554,7 +572,7 @@ if __name__=='__main__':
 
     # plot learning info
     title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
-    title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
+    title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode\n"
     # title_str += str(len(hiddens)) + " hidden layers, optimized with " +
     title_str += str(neurons) + " neurons in hidden layer, optimized with " + optimizer_str + "\n"
     f, axarr = pl.subplots(3, 1, figsize = (8, 10.5), dpi = 600)

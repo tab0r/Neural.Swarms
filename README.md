@@ -15,11 +15,11 @@ If you just want to train models or want to display somehow other than with a ju
 
 # tl;dr
 
-- To train a model, use on of the two .py files above
-- Customize your neural net by passing ```baseline_model()``` a list of layer dictionaries in the format ```{"size": 100, "activation": 'ReLU'}```
-- Use the ```train_model()``` method for training
-- Supervised training is still fairly basic, the reinforcement training has a variety of training methods with walls, blocks, rooms and dividers
-- With the right choice of methods in the right sequence, you should be able to train a model that can get through basic mazes.
+- To train a model, run one of the two .py files above
+- They will step you through setting up the basic variables
+- That code is locked to a 40 by 30 game board, 3-layer MLPs, and training on a empty field
+- I recommend training a model through the terminal, launching a Jupyter Notebook, and playing with it there
+- Then, use the Jupyter Notebook to run the more advanced training methods
 
 # Known issues
 
