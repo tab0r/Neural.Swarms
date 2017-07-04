@@ -1,63 +1,12 @@
 # utilities
-import pandas as pd
 import numpy as np
 import pylab as pl
 import pickle, os, sys, pdb
-from collections import Counter
 from tqdm import *
+from keras.models import Sequential, load_model
 
 # game imports
-
-# imports for neural net
-from keras.utils import np_utils
-from keras.models import Sequential, load_model
-from keras.layers.core import Dense
-from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
-import theano
-
-# constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
-def baseline_model(optimizer = Adam(lr = 0.00001),
-                    layers = [{"size":20,"activation":"relu"}],
-                    ipt_mode = 0, opt_mode = 0):
-    # four inputs - each coordinate when we move the goal
-    # two inputs for now, until it's doing reallly good at fixed goals
-    # and now 81 inputs, for a pixel value test!
-    # now we get 1204 - 1200 pixels for a 40x30 board, plus 4 inputs
-    if ipt_mode == 0:
-        inputs = 2
-    elif ipt_mode == 1:
-        inputs = 4
-    elif ipt_mode == 2:
-        inputs = (40, 30)
-    elif ipt_mode == 3:
-        inputs = 1204
-    # inputs = 1204
-    # six outputs - one for each action, and one to use det strategy
-    if opt_mode == 1:
-        num_outputs = 6
-    else:
-        num_outputs = 5
-    # prepare the navigator model
-    model = Sequential()
-    # initial inputs
-    l = list(layers)
-    l0 = l[0]
-    del l[0]
-    model.add(Dense(l0['size'],
-                input_dim = inputs,
-                activation = l0['activation']))
-    # add convolutions if mode == 2
-    if ipt_mode == 2:
-        model.add(Convolution2D(64, 3, 3, subsample=(1,1),init=lambda shape, name: normal(shape, scale=0.01, name=name), border_mode='same'))
-        model.add(Activation('relu'))
-    # the hidden layers
-    for layer in l:
-        model.add(Dense(layer['size'], activation=layer['activation']))
-    # the output layer
-    model.add(Dense(num_outputs, activation='tanh'))
-    model.compile(optimizer = optimizer,
-                    loss = "mean_squared_error")
-    return model
+from ReinforcementNaviGame import ReinforcementNaviGame, ReinforcementStrategy
 
 # takes a game, a model, number of episodes and steps, and perhaps most importantly, the range for our epsilon-greedy training.
 def train_model(game, model, episodes = 10, steps = 2,
@@ -139,114 +88,8 @@ def train_model(game, model, episodes = 10, steps = 2,
     output['rewards'] = rewards
     return output
 
-# doesn't work, might not fix. grid search is nonsense in this context. assume you don't need a big network.
-def grid_search_sketch():
-    training_game_size = 9
-    training_episodes = 1000
-    steps = 10
-    final_mean_loss, final_mean_dists, final_mean_reward = [], [], []
-    for neurons in range(60, 120, 10):
-        for layers in [2, 3, 4, 5, 10]:
-            # lets train a DQN model!
-            # make the model
-            layer = {"size":neurons,"activation":"relu"}
-            hiddens = [layer for i in range(layers)]    # make an optimizer
-            from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
-            # note to self: DON'T CHANGE THIS UNTIL YOU KNOW WE'RE LEARNING SOMETHING
-            # optimizer = sgd(lr = 0.0001)
-            # optimizer_str = "SGD"
-            # optimizer = Adagrad()
-            # optimizer_str = "Adagrad"
-            # optimizer = RMSprop()
-            # optimizer_str = "RMSprop"
-            optimizer = Adadelta()
-            optimizer_str = "Adadelta"
-            # optimizer = Adam()
-            # optimizer_str = "Adam"
-            model = baseline_model(optimizer, hiddens)
-            # prepare the game for training model
-            training_game = ReinforcementNaviGame(training_game_size,
-                                            training_game_size,
-                                            model)
-            training_game.setup()
-
-            output = train_model(game = training_game,
-                            model = model,
-                            episodes = training_episodes,
-                            steps = steps)
-
-            # plot learning info
-            title_str = str(training_game_size) + "x" + str(training_game_size) + " with "
-            title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode, & "
-            title_str += str(len(hiddens)) + " hidden layers, optimized with " + optimizer_str + "\n"
-            f, axarr = pl.subplots(3, 1, figsize = (10, 15), dpi = 300)
-            # f.canvas.set_window_title("RL Loss, 100 eps w/ 50 steps, Look: 20")
-            mean_step = 10
-            num_means = int(len(output['distances'])/mean_step/steps)
-
-            for _, k in enumerate([5, 10, 100]):
-                mean_step = k
-                mean_rewards = []
-                mean_dists = []
-                mean_loss = []
-                num_means = int(len(output['distances'])/mean_step/steps)
-                steps_per_mean = steps*mean_step
-                x = np.linspace(0, training_episodes, num_means)
-                for i in range(num_means):
-                    mean_r = 0
-                    mean_d = 0
-                    mean_l = 0
-                    for j in range(steps_per_mean):
-                        mean_r += output['rewards'][j + i * steps_per_mean]
-                        mean_d += output['distances'][j + i * steps_per_mean]
-                        mean_l += output['loss'][j + i * steps_per_mean]
-                    mean_r = mean_r / steps_per_mean
-                    mean_d = mean_d / steps_per_mean
-                    mean_l = mean_l / steps_per_mean
-                    mean_rewards.append(mean_r)
-                    mean_dists.append(mean_d)
-                    mean_loss.append(mean_l)
-                label = str(mean_step) + " Episodes"
-                axarr[0].plot(x, mean_loss, label = label)
-                axarr[1].plot(x, mean_dists, label = label)
-                axarr[2].plot(x, mean_rewards, label = label)
-
-            axarr[0].grid(True)
-            axarr[0].set_title(title_str + 'Mean Loss')
-            axarr[1].grid(True)
-            axarr[1].set_title('Mean Distances from Goal')
-            axarr[2].grid(True)
-            axarr[2].set_title('Mean Rewards')
-            f.subplots_adjust(hspace=0.2)
-
-            # axarr[1].plot(x, output['replays'])
-            # axarr[1].set_title('Replay Loss')
-            # axarr[2].plot(x2, output['reward_totals'])
-            # axarr[2].set_title('Total Reward')
-            # axarr[2].plot(x2, output['distances'])
-            # axarr[2].set_title('Distance from Goal')
-
-            file_str = str(training_game_size) + "x" + str(training_game_size) + "_"
-            file_str += str(training_episodes) + "_" + str(steps) + "_" + str(len(hiddens))
-            file_str += "_" + str(neurons) + "_neurons_"+ optimizer_str
-            pl.legend()
-            pl.plot()
-            pl.savefig("rl_plots" + file_str + ".png")
-            final_mean_reward.append(mean_rewards.pop())
-            final_mean_dists.append(mean_dists.pop())
-            final_mean_loss.append(mean_loss.pop())
-        # pl.show()
-    f, axarr = pl.subplots(1, 1, figsize = (10, 5), dpi = 300)
-    x = np.linspace(0, layers, layers)
-    axarr.plot(x, final_mean_reward, label = "Final mean rewards")
-    axarr.plot(x, final_mean_dists, label = "Final mean distances")
-    axarr.plot(x, final_mean_loss, label = "Final mean loss")
-    axarr.set_title("Network Grid Test")
-    pl.legend()
-    pl.savefig("rl_plots_network_test.png")
-    pl.close()
-
 # plots loss, distance from goal, and rewards, meaned over three different intervals of episodes. the mean is necessary as the training is so noisy. i use three different intervals, factors of five apart, as it seemed to yield readable charts. lots of potential for improvement and customization here.
+# currently doesn't work with output from the special training functions.
 def plot_learning_info(output, game, training_episodes = 10000, steps = 10, title_str = None, file_str = None):
     # plot learning info
     training_game_size_y = game.board.height
