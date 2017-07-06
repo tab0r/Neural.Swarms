@@ -3,10 +3,12 @@ import numpy as np
 import pylab as pl
 import pickle, os, sys, pdb
 from tqdm import *
-from notebook_game_helper import draw_game, animate_game
+from random import randint
 sys.path.append(os.path.abspath("../reinforcement/"))
+sys.path.append(os.path.abspath("../../../Python.Swarms/"))
 
 # game imports
+from navi_game import NaviStrategy
 from ReinforcementNaviGame import ReinforcementNaviGame, ReinforcementStrategy
 
 # imports for neural net
@@ -48,7 +50,7 @@ class HybridStrategy(ReinforcementStrategy):
 # constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
 def baseline_model(optimizer = Adam(lr = 0.00001),
                     layers = [{"size":20,"activation":"relu"}]):
-    return build_model(optimizer, layers, inputs = 1202, outputs = 6)
+    return build_model(optimizer, layers, inputs = 1204, outputs = 6)
 
 # these methods construct new training games, and pass them to train_model with the model you pass in.
 # lots of improvements to be made here... including some I made and accidentally deleted.... so that's a thing.
@@ -115,13 +117,14 @@ def train_with_channel(model, episodes, steps, gamecount):
 # the next training function I write will need to randomly select from a variety of different obstacle situations, and train with them all.
 
 if __name__=='__main__':
-    # lets train a DQN model!
+    # lets train a hybrid DQN model!
     # make the model
     print("If you are running this on a machine with GPU, and didn't use flags, abort now and restart with: \n")
     print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py\n")
     print("But that's kinda a lie, cuz this code is a lil buggy and every time I try to do that on AWS it explodes. I don't own a machine with a GPU, so I've been running it on compute-optimized AWS nodes for long runs. That said, my best models were trained in under 2 hours on a 2016 MacBook.")
     print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
-    neurons = int(input("How many hidden layer neurons?\n"))
+    # neurons = int(input("How many hidden layer neurons?\n"))
+    neurons = 20
     hiddens = [{"size":neurons,"activation":"relu"}]
     # the baseline_model function takes a dictionary of hidden layers,
     # and sets up your input/output layers for the game
@@ -140,8 +143,7 @@ if __name__=='__main__':
     # seriously, Adam is magical, I don't really understand it but just use it
     optimizer = Adam()
     optimizer_str = "Adam"
-    # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
-    model = baseline_model(optimizer, hiddens, ipt_mode = 3, opt_mode = 1)
+    model = baseline_model()
     # this probably won't work
     # model = load_model("guided_rl_model_wide.h5")
     # this probably will work

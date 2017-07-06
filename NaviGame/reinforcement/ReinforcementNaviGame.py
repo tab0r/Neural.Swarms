@@ -3,7 +3,7 @@ import numpy as np
 import pickle, os, sys, pdb
 
 # game imports
-sys.path.append(os.path.abspath("../../Python.Swarms/"))
+sys.path.append(os.path.abspath("../../../Python.Swarms/"))
 from random import random, sample, randint
 from navi_game import *
 
