@@ -5,7 +5,7 @@ import pylab as pl
 import pickle
 import os, sys
 from collections import Counter
-sys.path.append(os.path.abspath("../../Python.Swarms/"))
+sys.path.append(os.path.abspath("../../../Python.Swarms/"))
 
 # import the game parts
 # game imports
