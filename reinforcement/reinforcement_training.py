@@ -3,10 +3,35 @@ import numpy as np
 import pylab as pl
 import pickle, os, sys, pdb
 from tqdm import *
+from random import random, sample, randint
 from keras.models import Sequential, load_model
+from keras.optimizers import Adam
+from keras.layers.core import Dense
 
 # game imports
 from ReinforcementNaviGame import ReinforcementNaviGame, ReinforcementStrategy
+
+# constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
+def build_model(optimizer = Adam(lr = 0.00001),
+                    layers = [{"size":20,"activation":"relu"}],
+                    inputs = 2, outputs = 5):
+    # prepare the navigator model
+    model = Sequential()
+    # initial inputs
+    l = list(layers)
+    l0 = l[0]
+    del l[0]
+    model.add(Dense(l0['size'],
+                input_dim = inputs,
+                activation = l0['activation']))
+    # the hidden layers
+    for layer in l:
+        model.add(Dense(layer['size'], activation=layer['activation']))
+    # the output layer
+    model.add(Dense(outputs, activation='tanh'))
+    model.compile(optimizer = optimizer,
+                    loss = "mean_squared_error")
+    return model
 
 # takes a game, a model, number of episodes and steps, and perhaps most importantly, the range for our epsilon-greedy training.
 def train_model(game, model, episodes = 10, steps = 2,
@@ -142,68 +167,6 @@ def plot_learning_info(output, game, training_episodes = 10000, steps = 10, titl
     pl.savefig(file_str)
     pl.show()
 
-# these methods construct new training games, and pass them to train_model with the model you pass in.
-# lots of improvements to be made here... including some I made and accidentally deleted.... so that's a thing.
-# this one places random blocks into the game
-def train_with_blocks(model, episodes, steps, gamecount, blockcount):
-    training_game_size_x = 40
-    training_game_size_y = 30
-    episodes_per_game = int(episodes/gamecount)
-    outputs = []
-    for i in range(gamecount):
-        game = HybridNaviGame(training_game_size_y,
-                                training_game_size_x,
-                                model,
-                                tolerance = 3)
-        game.setup()
-        game.Navigator.strategy.mode = 3
-        blocks = []
-        for _ in range(blockcount):
-            blocks.append(game.add_block())
-        outputs.append(train_model(game = game,
-                model = model,
-                episodes = episodes_per_game,
-                steps = steps,
-                e_start = .9,
-                e_stop = .1))
-        draw_game(game, save = True, filename = "training_game" + str(i) + ".png")
-        del game
-        model.save("block_training_backup.h5")
-    return outputs
-
-# this one places two walls on either side of the target, with a random length and width
-def train_with_channel(model, episodes, steps, gamecount):
-    training_game_size_x = 40
-    training_game_size_y = 30
-    episodes_per_game = int(episodes/gamecount)
-    outputs = []
-    for i in range(gamecount):
-        game = HybridNaviGame(training_game_size_y,
-                                training_game_size_x,
-                                model,
-                                tolerance = 3)
-        game.setup()
-        game.Navigator.strategy.mode = 3
-        length = randint(8, 14) * 2
-        width = randint(1, 5) * 2
-        step_1 = (1, 0)
-        start_1 = (15 - int(0.5*length), 20 - int(0.5*width))
-        start_2 = (15 - int(0.5*length), 20 + int(0.5*width))
-        # ish
-        game.add_wall(length = length, start = start_1, step = step_1)
-        game.add_wall(length = length, start = start_2, step = step_1)
-
-        outputs.append(train_model(game = game,
-                model = model,
-                episodes = episodes_per_game,
-                steps = steps,
-                e_start = .9,
-                e_stop = .1))
-        draw_game(game, save = True, filename = "training_game" + str(i) + ".png")
-        del game
-        model.save("wall_training_backup.h5")
-    return outputs
-
 # the next training function I write will need to randomly select from a variety of different obstacle situations, and train with them all.
 
 if __name__=='__main__':
@@ -213,8 +176,11 @@ if __name__=='__main__':
     print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py\n")
     print("But that's kinda a lie, cuz this code is a lil buggy and every time I try to do that on AWS it explodes. I don't own a machine with a GPU, so I've been running it on compute-optimized AWS nodes for long runs. That said, my best models were trained in under 2 hours on a 2016 MacBook.")
     print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
-    neurons = int(input("How many hidden layer neurons?\n"))
-    hiddens = [{"size":neurons,"activation":"relu"}]
+    layers = int(input("How many hidden layers?\n"))
+    hiddens = []
+    for i in range(layers):
+        neurons = int(input("How many layer neurons?\n"))
+        hiddens.append({"size":neurons,"activation":"relu"})
     # the baseline_model function takes a dictionary of hidden layers,
     # and sets up your input/output layers for the game
     # [{"size":100,"activation":"relu"}, {"size":100,"activation":"relu"}]
@@ -233,22 +199,21 @@ if __name__=='__main__':
     optimizer = Adam()
     optimizer_str = "Adam"
     # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
-    model = baseline_model(optimizer, hiddens, ipt_mode = 3, opt_mode = 1)
-    # this probably won't work
-    # model = load_model("guided_rl_model_wide.h5")
-    # this probably will work
+    model = build_model(optimizer, hiddens)
     # model.load_weights("your model")
 
     # set up the training game
     training_game_size_x = 40
     training_game_size_y = 30
 
-    training_game = HybridNaviGame(training_game_size_y,
+    training_game = ReinforcementNaviGame(training_game_size_y,
                                     training_game_size_x,
                                     model,
                                     tolerance = 5)
+
+    # finish game setup with model in hand
     training_game.setup()
-    training_game.Navigator.strategy.mode = 3
+    training_game.Navigator.strategy.mode = 0
 
     training_episodes = int(input("How many episodes?\n"))
     steps = int(input("How many steps per episode?\n"))

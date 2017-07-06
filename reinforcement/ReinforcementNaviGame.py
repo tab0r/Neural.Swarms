@@ -55,28 +55,6 @@ class ReinforcementStrategy(NaviStrategy):
         self.last_choice = 4
         NaviStrategy.__init__(self, goal, tolerance)
 
-    # constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
-    def build_model(optimizer = Adam(lr = 0.00001),
-                        layers = [{"size":20,"activation":"relu"}],
-                        inputs = 4, outputs = 5):
-        # prepare the navigator model
-        model = Sequential()
-        # initial inputs
-        l = list(layers)
-        l0 = l[0]
-        del l[0]
-        model.add(Dense(l0['size'],
-                    input_dim = inputs,
-                    activation = l0['activation']))
-        # the hidden layers
-        for layer in l:
-            model.add(Dense(layer['size'], activation=layer['activation']))
-        # the output layer
-        model.add(Dense(num_outputs, activation='tanh'))
-        model.compile(optimizer = optimizer,
-                        loss = "mean_squared_error")
-        return model
-
     def plan_movement(self, e = 0.05, position = None):
         d = np.random.random()
         # explore 5% of the time
@@ -84,7 +62,7 @@ class ReinforcementStrategy(NaviStrategy):
             choice = randint(0, 4)
         # exploit current Q-function
         else:
-            _, quality = self.get_quality(mode = 2)
+            _, quality = self.get_quality(mode = self.mode)
             choice = np.argmax(quality)
         return choice
 
