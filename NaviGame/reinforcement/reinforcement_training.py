@@ -174,10 +174,6 @@ def plot_learning_info(output, game, training_episodes = 10000, steps = 10, titl
 if __name__=='__main__':
     # lets train a DQN model!
     # make the model
-    # print("If you are running this on a machine with GPU, and didn't use flags, abort now and restart with: \n")
-    # print("THEANO_FLAGS=device=gpu,floatX=float32 python this_file.py\n")
-    # print("But that's kinda a lie, cuz this code is a lil buggy and every time I try to do that on AWS it explodes. I don't own a machine with a GPU, so I've been running it on compute-optimized AWS nodes for long runs. That said, my best models were trained in under 2 hours on a 2016 MacBook.")
-    # print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
     # layers = int(input("How many hidden layers?\n"))
     layers = 2
     hiddens = []
@@ -190,37 +186,30 @@ if __name__=='__main__':
     # [{"size":100,"activation":"relu"}, {"size":100,"activation":"relu"}]
     # make an optimizer
     from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
-    # note: DON'T CHANGE THIS UNTIL YOU KNOW YOUR MODEL LEARNS SOMETHING
-    # optimizer = sgd(lr = 0.0001)
-    # optimizer_str = "SGD"
-    # optimizer = Adagrad()
-    # optimizer_str = "Adagrad"
-    # optimizer = RMSprop()
-    # optimizer_str = "RMSprop"
-    # optimizer = Adadelta()
-    # optimizer_str = "Adadelta"
     # seriously, Adam is magical, I don't really understand it but just use it
     optimizer = Adam()
     optimizer_str = "Adam"
-    # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
     model = build_model(optimizer, hiddens)
     # model.load_weights("your model")
 
     # set up the training game
-    training_game_size_x = 40
-    training_game_size_y = 30
+    training_game_size_x = 19
+    training_game_size_y = 13
 
     training_game = ReinforcementNaviGame(training_game_size_y,
                                     training_game_size_x,
                                     model,
-                                    tolerance = 5)
+                                    tolerance = 1.4)
 
     # finish game setup with model in hand
     training_game.setup()
+    # mode 1 is coord input
+    # mode 2 is pixel
     training_game.Navigator.strategy.mode = 1
+    # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
 
-    training_episodes = int(input("How many episodes?\n"))
-    steps = int(input("How many steps per episode?\n"))
+    training_episodes = 10000 #int(input("How many episodes?\n"))
+    steps = 15 #int(input("How many steps per episode?\n"))
     print("Ready to beging training")
     _ = input("Press enter to begin")
     # train the model

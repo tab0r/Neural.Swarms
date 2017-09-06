@@ -30,7 +30,7 @@ class SupervisedNaviGame(NaviGame):
             height,
             width,
             model = None,
-            tolerance = 1.4,
+            tolerance = 2,
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
                             #goal = (int(height/2), int(width/2)),#None,

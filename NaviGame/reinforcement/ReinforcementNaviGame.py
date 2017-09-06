@@ -16,10 +16,10 @@ import theano
 
 # Navigator game main class
 class ReinforcementNaviGame(NaviGame):
-    def __init__(self, height, width, model, tolerance = 2, goal_idle = 1):
+    def __init__(self, height, width, model, tolerance = 2, goal_idle = 2):
         NaviGame.__init__(self, height, width,
-                            goal = (int(height/2), int(width/2)),
-                            moving_target = False,
+                            # goal = (int(height/2), int(width/2)),
+                            # moving_target = False,
                             tolerance = tolerance,
                             goal_idle = goal_idle)
         self.model = model
@@ -110,7 +110,7 @@ class ReinforcementStrategy(NaviStrategy):
         else:
             if self.at_goal > self.idle_t:
                 reward = goal
-                self.wins += 1
+                # self.wins += 1
             else:
                 reward = step
         return reward
