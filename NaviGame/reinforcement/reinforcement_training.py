@@ -16,7 +16,7 @@ from game_display_helper import make_gif
 # constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
 def build_model(optimizer = Adam(lr = 0.00001),
                     layers = [{"size":20,"activation":"relu"}],
-                    inputs = 2, outputs = 5):
+                    inputs = 4, outputs = 5):
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -217,7 +217,7 @@ if __name__=='__main__':
 
     # finish game setup with model in hand
     training_game.setup()
-    training_game.Navigator.strategy.mode = 0
+    training_game.Navigator.strategy.mode = 1
 
     training_episodes = int(input("How many episodes?\n"))
     steps = int(input("How many steps per episode?\n"))
@@ -231,59 +231,8 @@ if __name__=='__main__':
                     e_start = .9,
                     e_stop = .1)
 
-    # plot learning info
-    # title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
-    # title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode\n"
-    # # title_str += str(len(hiddens)) + " hidden layers, optimized with " +
-    # title_str += str(neurons) + " neurons in hidden layer, optimized with " + optimizer_str + "\n"
-    # f, axarr = pl.subplots(3, 1, figsize = (8, 10.5), dpi = 600)
-    #
-    # base = int(training_episodes/1000)
-    # for _, k in enumerate([base, 5*base, 25*base]):
-    #     mean_step = k
-    #     mean_rewards = []
-    #     mean_dists = []
-    #     mean_loss = []
-    #     num_means = int(len(output['distances'])/mean_step/steps)
-    #     steps_per_mean = steps*mean_step
-    #     x = np.linspace(0, training_episodes, num_means)
-    #     for i in range(num_means):
-    #         mean_r = 0
-    #         mean_d = 0
-    #         mean_l = 0
-    #         for j in range(steps_per_mean):
-    #             mean_r += output['rewards'][j + i * steps_per_mean]
-    #             mean_d += output['distances'][j + i * steps_per_mean]
-    #             mean_l += output['loss'][j + i * steps_per_mean]
-    #         mean_r = mean_r / steps_per_mean
-    #         mean_d = mean_d / steps_per_mean
-    #         mean_l = mean_l / steps_per_mean
-    #         mean_rewards.append(mean_r)
-    #         mean_dists.append(mean_d)
-    #         mean_loss.append(mean_l)
-    #     label = str(mean_step) + " Episodes"
-    #     axarr[0].plot(x, mean_loss, label = label)
-    #     axarr[1].plot(x, mean_dists, label = label)
-    #     axarr[2].plot(x, mean_rewards, label = label)
-    #
-    # axarr[0].grid(True)
-    # axarr[0].set_title(title_str + 'Mean Loss')
-    # axarr[1].grid(True)
-    # axarr[1].set_title('Mean Distances from Goal')
-    # axarr[2].grid(True)
-    # axarr[2].set_title('Mean Rewards')
-    # f.subplots_adjust(hspace=0.2)
-
-    file_str = str(training_game_size_y) + "x" + str(training_game_size_x) + "_"
-    file_str += str(training_episodes) + "_" + str(steps) + "_" + str(neurons)
-    #  str(len(hiddens))
-    file_str += "_" + optimizer_str
-    # pl.legend()
-    # pl.plot()
     it_str = str(0)
     print("Saving trained model...")
-    model.save("guided_rl_model_" + file_str + it_str + ".h5")
-    # print("Saving training plot")
-    # pl.savefig("hybrid_plots" + file_str + it_str + ".png")
+    model.save("guided_rl_model_" + it_str + ".h5")
     print("Creating animation")
     make_gif(training_game, n = 100)

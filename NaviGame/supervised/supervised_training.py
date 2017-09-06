@@ -34,7 +34,7 @@ class SupervisedNaviGame(NaviGame):
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
                             goal = None,
-                            moving_target = False,
+                            moving_target = True,
                             tolerance = tolerance,
                             goal_idle = goal_idle)
         self.model = model
@@ -158,36 +158,24 @@ def model_benchmark(model, actions, goal):
     # print(model.predict(np.array([1,7]).reshape(1,2)) == model.predict(np.array([14,7]).reshape(1,2)))
 
 if __name__=='__main__':
-    # game variables
-    epochs = 10
+    # learning variables
+    epochs = 20
     batch_size = 10
     learning_rate = 0.05
-    steps = 1000
-    training_game_size = 13
-
-
-    # number of epochs for training
-    epochs = epochs
-    batch_size = batch_size
-
-    # learning rate
-    learning_rate = learning_rate
 
     # optimizer
     optimizer = sgd(lr=learning_rate)
     optimizer_str = "SGD(lr = "+str(learning_rate)+")"
 
     # layers
-    layers = [{"size":5,"activation":"tanh"},
-    {"size":5,"activation":"tanh"}]
+    layers = [{"size":5,"activation":"relu"},
+    {"size":5,"activation":"relu"}]
 
     # number of steps to train on
-    steps = steps
+    steps = 10000
 
     # prepare the game for collecting data
-    training_game = SupervisedNaviGame(
-                        training_game_size,
-                        training_game_size)
+    training_game = SupervisedNaviGame(13, 19)
 
     # make the model
     training_game.model = training_game.game_model(optimizer, layers)
@@ -205,6 +193,6 @@ if __name__=='__main__':
                 verbose = 1,)
     # pull data points of for validation
     print("Network and final validation data ready for testing.")
-        # prepare the game for final validation
+    # prepare the game for final validation
     print("Creating animation")
     make_gif(training_game, n = 100)
