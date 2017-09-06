@@ -33,8 +33,8 @@ class SupervisedNaviGame(NaviGame):
             tolerance = 1.4,
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
-                            goal = None,
-                            moving_target = True,
+                            #goal = (int(height/2), int(width/2)),#None,
+                            #moving_target = False,
                             tolerance = tolerance,
                             goal_idle = goal_idle)
         self.model = model
@@ -87,17 +87,15 @@ class SupervisedNaviGame(NaviGame):
     def train_model(self, steps = 1000, epochs = 20, batch_size = 32,
                         verbose = 0, inputs = None, targets = None):
         if (inputs == None) and (targets == None):
-            self.Navigator.bindStrategy(NaviStrategy(goal = self.goal))
             s = 0
             inputs, targets = [], []
             # grab sequences of games, ten steps at a time
             while s < steps:
-                self.shift_goal()
+                # self.shift_figure()
                 inputsk, targetsk = self.train_data(10)
                 inputs.extend(inputsk)
                 targets.extend(targetsk)
                 s += len(inputsk)
-            self.Navigator.bindStrategy(self.strategy)
         print("Data generated, now fitting network")
         log = self.model.fit(inputs, targets,
                             verbose = verbose,
@@ -121,41 +119,6 @@ class SupervisedStrategy(NaviStrategy):
         else: # use the deterministic strategy
             choice = det_choice
         return choice
-
-
-def model_benchmark(model, actions, goal):
-    print('''Prediction Test: If network does not provide differentiated
-     responses to these inputs, keep training or modify network. The piece
-    is on opposite sides of the goal here so the predicted rewards should
-    be opposites.''')
-    print(" Note that these outputs correspond to these actions:")
-    print(" (y,x): ",actions)
-    ipt0 = [goal[0], goal[1]+2]
-    ipt0.extend(list(goal))
-    predict0 = model.predict(np.array(ipt0).reshape(1,4))
-    choice0 = np.argmax(predict0)
-    # print(predict0, choice0)
-    print('''   Position +(0, 1),  Goal {}: {}'''.format(goal, choice0))
-    ipt1 = [goal[0], goal[1]-2]
-    ipt1.extend(list(goal))
-    predict1 = model.predict(np.array(np.array(ipt1)).reshape(1,4))
-    choice1 = np.argmax(predict1)
-    # print(predict1, choice1)
-    print('''   Position -(0, 2), Goal {}: {}'''.format(goal, choice1))
-    ipt2 = [goal[0]+2, goal[1]]
-    ipt2.extend(list(goal))
-    predict2 = model.predict(np.array(ipt2).reshape(1,4))
-    choice2 = np.argmax(predict2)
-    # print(predict2, choice2)
-    print('''   Position +(2, 0),  Goal {}: {}'''.format(goal, choice2))
-    ipt3 = [goal[0]-2, goal[1]]
-    ipt3.extend(list(goal))
-    predict3 = model.predict(np.array(ipt3).reshape(1,4))
-    choice3 = np.argmax(predict3)
-    # print(predict3, choice3)
-    print('''   Position -(2, 0), Goal {}: {}'''.format(goal, choice3))
-    # print(''' Are they equal? If so this is extra bad... ''')
-    # print(model.predict(np.array([1,7]).reshape(1,2)) == model.predict(np.array([14,7]).reshape(1,2)))
 
 if __name__=='__main__':
     # learning variables
