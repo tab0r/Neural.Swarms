@@ -15,7 +15,7 @@ from board import Board
 from figure import Figure, FigureStrategy
 from logger import log
 from navi_game import *
-from notebook_game_helper import *
+from game_display_helper import make_gif
 
 # imports for neural net
 from keras.utils import np_utils
@@ -34,7 +34,7 @@ class SupervisedNaviGame(NaviGame):
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
                             goal = None,
-                            moving_target = True,
+                            moving_target = False,
                             tolerance = tolerance,
                             goal_idle = goal_idle)
         self.model = model
@@ -162,8 +162,8 @@ if __name__=='__main__':
     epochs = 10
     batch_size = 10
     learning_rate = 0.05
-    steps = 100
-    training_game_size = 8
+    steps = 1000
+    training_game_size = 13
 
 
     # number of epochs for training
@@ -206,3 +206,5 @@ if __name__=='__main__':
     # pull data points of for validation
     print("Network and final validation data ready for testing.")
         # prepare the game for final validation
+    print("Creating animation")
+    make_gif(training_game, n = 100)
