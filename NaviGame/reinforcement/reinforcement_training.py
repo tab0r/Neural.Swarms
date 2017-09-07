@@ -208,8 +208,8 @@ if __name__=='__main__':
     training_game.Navigator.strategy.mode = 1
     # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
 
-    training_episodes = 10000 #int(input("How many episodes?\n"))
-    steps = 15 #int(input("How many steps per episode?\n"))
+    training_episodes = 1000000 #int(input("How many episodes?\n"))
+    steps = 5 #int(input("How many steps per episode?\n"))
     print("Ready to beging training")
     _ = input("Press enter to begin")
     # train the model

@@ -116,8 +116,8 @@ if __name__=='__main__':
     # model.load_weights("your model")
 
     # set up the training game
-    training_game_size_x = 40
-    training_game_size_y = 30
+    training_game_size_x = 19
+    training_game_size_y = 13
 
     training_game = HybridNaviGame(training_game_size_y,
                                     training_game_size_x,
