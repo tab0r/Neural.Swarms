@@ -89,7 +89,7 @@ def train_with_blocks(model, episodes, steps, gamecount, blockcount):
 if __name__=='__main__':
     # lets train a hybrid DQN model!
     # make the model
-    neurons = 20
+    neurons = 5
     hiddens = [{"size":neurons,"activation":"relu"},
                 {"size":neurons,"activation":"relu"}]
     # the baseline_model function takes a dictionary of hidden layers,
@@ -122,15 +122,16 @@ if __name__=='__main__':
     training_game = HybridNaviGame(training_game_size_y,
                                     training_game_size_x,
                                     model,
-                                    tolerance = 2)
+                                    tolerance = 1.5)
     training_game.setup()
     # Strategy mode 1 is coordinates only
     # Mode 2 is pixel input
     # Mode 3 is pix + coords
     training_game.Navigator.strategy.mode = 1
 
-    training_episodes = int(input("How many episodes?\n"))
-    steps = 15 #int(input("How many steps per episode?\n"))
+    training_episodes = 1000
+    #int(input("How many episodes?\n"))
+    steps = 10 #int(input("How many steps per episode?\n"))
     print("Ready to beging training")
     _ = input("Press enter to begin")
     # train the model

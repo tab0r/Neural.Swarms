@@ -12,11 +12,10 @@ from keras.layers.core import Dense
 from ReinforcementNaviGame import ReinforcementNaviGame, ReinforcementStrategy
 sys.path.append(os.path.abspath("../../../Python.Swarms/"))
 from game_display_helper import make_gif
-
 # constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
 def build_model(optimizer = Adam(lr = 0.00001),
                     layers = [{"size":20,"activation":"relu"}],
-                    inputs = 4, outputs = 5):
+                    inputs = 2, outputs = 5):
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -174,42 +173,41 @@ def plot_learning_info(output, game, training_episodes = 10000, steps = 10, titl
 if __name__=='__main__':
     # lets train a DQN model!
     # make the model
-    # layers = int(input("How many hidden layers?\n"))
     layers = 2
+    #int(input("How many hidden layers?\n"))
     hiddens = []
     for i in range(layers):
-    #     neurons = int(input("How many layer neurons?\n"))
-        neurons = 20
+        neurons = 5
+        #int(input("How many layer neurons?\n"))
         hiddens.append({"size":neurons,"activation":"relu"})
     # the baseline_model function takes a dictionary of hidden layers,
     # and sets up your input/output layers for the game
     # [{"size":100,"activation":"relu"}, {"size":100,"activation":"relu"}]
     # make an optimizer
-    from keras.optimizers import sgd, RMSprop, Adagrad, Adadelta, Adam
-    # seriously, Adam is magical, I don't really understand it but just use it
+    from keras.optimizers import sgd, Adam
     optimizer = Adam()
     optimizer_str = "Adam"
+    # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
     model = build_model(optimizer, hiddens)
     # model.load_weights("your model")
 
     # set up the training game
     training_game_size_x = 19
     training_game_size_y = 13
-
+    tol = 1.4
+    #float(input("How much tolerance from goal?\n"))
     training_game = ReinforcementNaviGame(training_game_size_y,
                                     training_game_size_x,
                                     model,
-                                    tolerance = 1.4)
+                                    tolerance = tol,
+                                    goal_idle = 5)
 
     # finish game setup with model in hand
     training_game.setup()
-    # mode 1 is coord input
-    # mode 2 is pixel
     training_game.Navigator.strategy.mode = 1
-    # ipt_mode 3 gets the game screen as input, opt_mode 1 has a deterministic strategy as a valid choice
 
-    training_episodes = 1000000 #int(input("How many episodes?\n"))
-    steps = 5 #int(input("How many steps per episode?\n"))
+    training_episodes = int(input("How many episodes?\n"))
+    steps = int(input("How many steps per episode?\n"))
     print("Ready to beging training")
     _ = input("Press enter to begin")
     # train the model
@@ -217,11 +215,17 @@ if __name__=='__main__':
                     model = model,
                     episodes = training_episodes,
                     steps = steps,
-                    e_start = .9,
-                    e_stop = .1)
+                    e_start = 1,
+                    e_stop = .5)
+
+    # plot learning info
+    title_str = str(training_game_size_y) + "x" + str(training_game_size_x) + " with "
+    title_str += str(training_episodes) + " episodes, " + str(steps) + " steps per episode\n"
+    # title_str += str(len(hiddens)) + " hidden layers, optimized with " +
+    title_str += str(neurons) + " neurons in hidden layer, optimized with " + optimizer_str + "\n"
 
     it_str = str(0)
     print("Saving trained model...")
-    model.save("guided_rl_model_" + it_str + ".h5")
-    print("Creating animation")
-    make_gif(training_game, n = 100)
+    model.save("reinforcement_model_" + file_str + it_str + ".h5")
+    print("Saving training plot")
+    make_gif(training_game, 100, file_str)

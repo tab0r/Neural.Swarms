@@ -30,7 +30,7 @@ class SupervisedNaviGame(NaviGame):
             height,
             width,
             model = None,
-            tolerance = 2,
+            tolerance = 1.5,
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
                             #goal = (int(height/2), int(width/2)),#None,
@@ -153,9 +153,9 @@ if __name__=='__main__':
                 steps = steps,
                 epochs = epochs,
                 batch_size = batch_size,
-                verbose = 1,)
+                verbose = 1)
     # pull data points of for validation
     print("Network and final validation data ready for testing.")
     # prepare the game for final validation
     print("Creating animation")
-    make_gif(training_game, n = 100)
+    make_gif(training_game, 100)
