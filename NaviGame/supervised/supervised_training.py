@@ -30,8 +30,8 @@ class SupervisedNaviGame(NaviGame):
             height,
             width,
             model = None,
-            tolerance = 1.5,
-            goal_idle = 1):
+            tolerance = 1.4,
+            goal_idle = 2):
         NaviGame.__init__(self, height, width,
                             goal = (int(height/2), int(width/2)),#None,
                             moving_target = False,
@@ -64,14 +64,13 @@ class SupervisedNaviGame(NaviGame):
             model.add(Dense(layer['size'], activation=layer['activation']))
             # the output layer
             model.add(Dense(num_actions, activation='sigmoid'))
-            model.compile(optimizer = optimizer,
-            loss = "mean_squared_error")
-            return model
+        model.compile(optimizer = optimizer,
+        loss = "mean_squared_error")
+        return model
 
     # generate data for training the navigator
     # uses the deterministic strategy NaviStrategy
     def train_data(self, n = 100):
-        self.Navigator.color = 3
         inputs, targets = [], []
         for i in range(n):
             ipt, _ = self.Navigator.strategy.get_input()
@@ -96,7 +95,13 @@ class SupervisedNaviGame(NaviGame):
                 inputs.extend(inputsk)
                 targets.extend(targetsk)
                 s += len(inputsk)
-        print("Data generated, now fitting network")
+        print("Data generated")
+        _resp = input("would you like to review?")
+        if _resp == "y":
+            print("[Inputs], [Targets]")
+            for i in range(10):
+                print(inputs[i], targets[i])
+        print("Now fitting network")
         log = self.model.fit(inputs, targets,
                             verbose = verbose,
                             epochs = epochs,
@@ -122,7 +127,7 @@ class SupervisedStrategy(NaviStrategy):
 
 if __name__=='__main__':
     # learning variables
-    epochs = 20
+    epochs = 10
     batch_size = 10
     learning_rate = 0.05
 
@@ -131,11 +136,11 @@ if __name__=='__main__':
     optimizer_str = "SGD(lr = "+str(learning_rate)+")"
 
     # layers
-    layers = [{"size":5,"activation":"relu"},
-    {"size":5,"activation":"relu"}]
+    layers = [{"size":5,"activation":"tanh"},
+    {"size":5,"activation":"tanh"}]
 
     # number of steps to train on
-    steps = 100000
+    steps = 10000
 
     # prepare the game for collecting data
     training_game = SupervisedNaviGame(13, 19)
