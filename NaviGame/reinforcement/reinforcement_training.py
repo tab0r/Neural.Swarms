@@ -15,7 +15,7 @@ from game_display_helper import make_gif
 # constructs an MLP with inputs & outputs for different game modes, and whatever hidden layers you pass in with a dictionary
 def build_model(optimizer = Adam(lr = 0.00001),
                     layers = [{"size":20,"activation":"relu"}],
-                    inputs = 2, outputs = 5):
+                    inputs = 4, outputs = 5):
     # prepare the navigator model
     model = Sequential()
     # initial inputs
@@ -194,22 +194,23 @@ if __name__=='__main__':
     # set up the training game
     training_game_size_x = 19
     training_game_size_y = 13
-    tol = 1.4
-    #float(input("How much tolerance from goal?\n"))
+    # tol = float(input("How much tolerance from goal?\n"))
     training_game = ReinforcementNaviGame(training_game_size_y,
                                     training_game_size_x,
                                     model,
-                                    tolerance = tol,
-                                    goal_idle = 5)
+                                    tolerance = 1.4,
+                                    goal_idle = 2)
 
     # finish game setup with model in hand
     training_game.setup()
     training_game.Navigator.strategy.mode = 1
 
-    training_episodes = int(input("How many episodes?\n"))
-    steps = int(input("How many steps per episode?\n"))
-    print("Ready to beging training")
-    _ = input("Press enter to begin")
+    training_episodes = 100000
+    #int(input("How many episodes?\n"))
+    steps = 5
+    #int(input("How many steps per episode?\n"))
+    # print("Ready to beging training")
+    #_ = input("Press enter to begin")
     # train the model
     output = train_model(game = training_game,
                     model = model,
@@ -226,6 +227,6 @@ if __name__=='__main__':
 
     it_str = str(0)
     print("Saving trained model...")
-    model.save("reinforcement_model_" + file_str + it_str + ".h5")
+    model.save("reinforcement_model_" + it_str + ".h5")
     print("Saving training plot")
-    make_gif(training_game, 100, file_str)
+    make_gif(training_game, 100)

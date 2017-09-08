@@ -18,7 +18,7 @@ import theano
 class ReinforcementNaviGame(NaviGame):
     def __init__(self, height, width, model, tolerance = 2, goal_idle = 2):
         NaviGame.__init__(self, height, width,
-                            # goal = (int(height/2), int(width/2)),
+                            goal = (int(height/2), int(width/2)),
                             # moving_target = False,
                             tolerance = tolerance,
                             goal_idle = goal_idle)

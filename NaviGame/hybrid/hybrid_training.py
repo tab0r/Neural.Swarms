@@ -129,7 +129,7 @@ if __name__=='__main__':
     # Mode 3 is pix + coords
     training_game.Navigator.strategy.mode = 1
 
-    training_episodes = 1000
+    training_episodes = 100000
     #int(input("How many episodes?\n"))
     steps = 10 #int(input("How many steps per episode?\n"))
     print("Ready to beging training")

@@ -33,8 +33,8 @@ class SupervisedNaviGame(NaviGame):
             tolerance = 1.5,
             goal_idle = 1):
         NaviGame.__init__(self, height, width,
-                            #goal = (int(height/2), int(width/2)),#None,
-                            #moving_target = False,
+                            goal = (int(height/2), int(width/2)),#None,
+                            moving_target = False,
                             tolerance = tolerance,
                             goal_idle = goal_idle)
         self.model = model
@@ -135,7 +135,7 @@ if __name__=='__main__':
     {"size":5,"activation":"relu"}]
 
     # number of steps to train on
-    steps = 10000
+    steps = 100000
 
     # prepare the game for collecting data
     training_game = SupervisedNaviGame(13, 19)
