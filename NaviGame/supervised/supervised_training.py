@@ -41,6 +41,7 @@ class SupervisedNaviGame(NaviGame):
 
     def setup(self):
         NaviGame.setup(self)
+        self.training_strategy = NaviStrategy(self.goal, self.tolerance)
         self.strategy = SupervisedStrategy(self.goal, self.model)
         self.Navigator.bindStrategy(self.strategy)
 
@@ -62,8 +63,8 @@ class SupervisedNaviGame(NaviGame):
         # the hidden layers
         for layer in l:
             model.add(Dense(layer['size'], activation=layer['activation']))
-            # the output layer
-            model.add(Dense(num_actions, activation='sigmoid'))
+        # the output layer
+        model.add(Dense(num_actions, activation='sigmoid'))
         model.compile(optimizer = optimizer,
         loss = "mean_squared_error")
         return model
@@ -72,6 +73,7 @@ class SupervisedNaviGame(NaviGame):
     # uses the deterministic strategy NaviStrategy
     def train_data(self, n = 100):
         inputs, targets = [], []
+        self.Navigator.bindStrategy(self.training_strategy)
         for i in range(n):
             ipt, _ = self.Navigator.strategy.get_input()
             inputs.append(ipt)
@@ -80,7 +82,8 @@ class SupervisedNaviGame(NaviGame):
             t[choice] = 1
             targets.append(t)
             self.step()
-            # return the data
+        # return the data
+        self.Navigator.bindStrategy(self.strategy)
         return inputs, targets
 
     def train_model(self, steps = 1000, epochs = 20, batch_size = 32,
@@ -115,20 +118,19 @@ class SupervisedStrategy(NaviStrategy):
         self.model = model
         NaviStrategy.__init__(self, goal)
 
-    def plan_movement(self):
-        det_choice = NaviStrategy.plan_movement(self)
-        if self.model != None: # use the model
+    def plan_movement(self, det_choice = False):
+        if (self.model != None) and (det_choice == False): # use the model
             ipt, _ = self.get_input()
             predictions = self.model.predict(np.array(ipt).reshape(1, 4))
             choice = np.argmax(predictions)
         else: # use the deterministic strategy
-            choice = det_choice
+            choice = NaviStrategy.plan_movement(self)
         return choice
 
 if __name__=='__main__':
     # learning variables
-    epochs = 10
-    batch_size = 10
+    epochs = 20
+    batch_size = 32
     learning_rate = 0.05
 
     # optimizer
@@ -136,32 +138,44 @@ if __name__=='__main__':
     optimizer_str = "SGD(lr = "+str(learning_rate)+")"
 
     # layers
-    layers = [{"size":5,"activation":"tanh"},
-    {"size":5,"activation":"tanh"}]
+    layers = [{"size":20,"activation":"tanh"}]
+    # {"size":5,"activation":"tanh"}]
 
     # number of steps to train on
-    steps = 10000
+    steps = 20000
 
     # prepare the game for collecting data
     training_game = SupervisedNaviGame(13, 19)
 
     # make the model
-    training_game.model = None #training_game.game_model(optimizer, layers)
+    training_game.model = training_game.game_model(optimizer, layers)
 
     # setup the game
     training_game.setup()
 
-    print("Generating training data")
+    print("Generating data & training")
+    # pdb.set_trace()
     # collect all data to make pickled runs!
     # stop regenerating the damn data!
-    test_data = training_game.train_data()
-    # log, inputs, targets = training_game.train_model(
-    #             steps = steps,
-    #             epochs = epochs,
-    #             batch_size = batch_size,
-    #             verbose = 1)
+    # test_data = training_game.train_data()
+    # for i in range(100):
+    #     print(test_data[0][i], test_data[1][i])
+    log, inputs, targets = training_game.train_model(
+                steps = steps,
+                epochs = epochs,
+                batch_size = batch_size,
+                verbose = 1)
     # # pull data points of for validation
     # print("Network and final validation data ready for testing.")
     # # prepare the game for final validation
-    # print("Creating animation")
-    # make_gif(training_game, 100)
+    print("Creating animation")
+    make_gif(training_game, 100)
+    training_game.model.save('game_model.h5')
+    # note: the example model performs almost identically to the
+    # deterministic strategy. It is trained with the following parameters
+    # epochs: 20
+    # batch size: 32
+    # learning rate: 0.05
+    # optimizer: sgd
+    # hiddens: 1 x (20 tanh)
+    # loss: 0.0269 
