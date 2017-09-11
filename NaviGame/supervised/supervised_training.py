@@ -146,7 +146,7 @@ if __name__=='__main__':
     training_game = SupervisedNaviGame(13, 19)
 
     # make the model
-    training_game.model = training_game.game_model(optimizer, layers)
+    training_game.model = None #training_game.game_model(optimizer, layers)
 
     # setup the game
     training_game.setup()
@@ -154,13 +154,14 @@ if __name__=='__main__':
     print("Generating training data")
     # collect all data to make pickled runs!
     # stop regenerating the damn data!
-    log, inputs, targets = training_game.train_model(
-                steps = steps,
-                epochs = epochs,
-                batch_size = batch_size,
-                verbose = 1)
-    # pull data points of for validation
-    print("Network and final validation data ready for testing.")
-    # prepare the game for final validation
-    print("Creating animation")
-    make_gif(training_game, 100)
+    test_data = training_game.train_data()
+    # log, inputs, targets = training_game.train_model(
+    #             steps = steps,
+    #             epochs = epochs,
+    #             batch_size = batch_size,
+    #             verbose = 1)
+    # # pull data points of for validation
+    # print("Network and final validation data ready for testing.")
+    # # prepare the game for final validation
+    # print("Creating animation")
+    # make_gif(training_game, 100)
