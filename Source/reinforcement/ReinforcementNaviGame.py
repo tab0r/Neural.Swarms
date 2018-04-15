@@ -14,9 +14,7 @@ from navi_game import NaviGame, NaviStrategy
 # - feeds the Reinforcement Strategy a reward (diff between last two frames scores)
 class ReinforcementNaviGame(NaviGame):
     def __init__(self):
-        height = 13
-        width = 19
-        NaviGame.__init__(self, height, width)
+        NaviGame.__init__(self)
         self.display_str = "Game start"
         self.last_score = 0
 
@@ -37,9 +35,9 @@ class ReinforcementNaviGame(NaviGame):
         self.display_str += " Last Reward: "
         self.display_str += "{0:.2f}".format(reward)
 
-    def train_model(self, episodes = 200000, steps = 25, e_start = 1, e_stop = 0):
+    def train_model(self, episodes = 336000, steps = 10, e_start = 1.0, e_stop = 0.1):
         e_delta = e_start - e_stop / episodes
-        desc = "Network training starting"
+        desc = "Strategy training starting"
         # turn on training
         self.Navigator.strategy.online_learning = True
         # set up tqdm progress bar to display loss dynamically
@@ -48,10 +46,8 @@ class ReinforcementNaviGame(NaviGame):
             # reset game - score, last_reward, set to zero
             # figure moves to random position, memory cleared
             # implement self.reset() function later
-            self.score = 0
+            self.reset()
             self.last_score = 0
-            self.shift_goal()
-            self.shift_figure(self.Navigator)
             self.Navigator.strategy.reset_memory()
             # calculate epsilon greedy value for episode
             e = e_start - j * (e_start-e_stop)/episodes
@@ -72,15 +68,15 @@ class ReinforcementNaviGame(NaviGame):
 class Q_Table(NaviStrategy):
     def __init__(self, goal):
         # Q learner
-        self.memory = {"inputs": [], "choices": [], "rewards": []}
         self.q_table = dict()
-        self.epsilon = 0.1
+        self.reset_memory()
         self.online_learning = False
         self.pixel_input_mode = False
         NaviStrategy.__init__(self, goal)
 
     def reset_memory(self):
         self.memory = {"inputs": [], "choices": [], "rewards": []}
+        self.epsilon = 0.01
 
     def get_reward(self, reward):
         self.memory['rewards'].append(reward)
@@ -103,9 +99,9 @@ class Q_Table(NaviStrategy):
             if str(s) in self.q_table.keys(): # check if we've seen this state
                 target = self.q_table[str(s)] # grab the values
             else: # if not, generate some random numbers with mean zero
-                target = 2*np.random.random((1,5)) - 1
-            gamma = 0.5 # hard coding discount at 0.5 because games are short, there's some stochasticity around boundaries and only the reward itself matters
-            target[0][a] = r + gamma * quality[0][a]
+                target = np.random.random((1,5)) - 1
+            gamma = 0.1
+            target[0][a] = r + gamma * np.max(quality[0])
             self.q_table[str(s)] = target
         # store this frames' input
         self.memory['inputs'].append(s_prime)
@@ -119,8 +115,9 @@ class Q_Table(NaviStrategy):
             else:
                 choice = np.argmax(quality)
 
-        e_choice = NaviStrategy.step(self, choice) # since the model may attempt to wander off the board
-        # maybe do something if e_choice is difference from choice, but for now hope that rewards handle it
+        e_choice = NaviStrategy.step(self, choice) # since the model may attempt
+        # to wander off the board, or into the flag, e_choice may be different
+        # from choice. maybe do something if so, but so far handle it well
         self.memory['choices'].append(choice) # store a'
 
 # WIP LSTM-DQN strategy
